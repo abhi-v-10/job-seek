@@ -1,7 +1,7 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, MessageSquare, Briefcase, Plus, LogIn, User, Settings, Upload, LogOut, File } from "lucide-react";
+import { Search, MessageSquare, Briefcase, Plus, LogIn, User, Settings, Upload, LogOut, File, Edit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect } from "react";
 
@@ -139,6 +140,20 @@ export function MainNav() {
     }
   };
 
+  const handleEditResume = (e: Event) => {
+    e.preventDefault();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.png';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFileUpload(file);
+      }
+    };
+    input.click();
+  };
+
   return (
     <nav className="bg-[#18181B] text-white px-6 py-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -182,10 +197,16 @@ export function MainNav() {
                   <span>Profile Settings</span>
                 </DropdownMenuItem>
                 {resumeUrl ? (
-                  <DropdownMenuItem className="flex items-center gap-2" onSelect={handleViewResume}>
-                    <File size={16} />
-                    <span>View Resume</span>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem className="flex items-center gap-2" onSelect={handleViewResume}>
+                      <File size={16} />
+                      <span>View Resume</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2" onSelect={handleEditResume}>
+                      <Edit size={16} />
+                      <span>Edit Resume</span>
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   <DropdownMenuItem className="flex items-center gap-2" onSelect={(e) => {
                     e.preventDefault();
@@ -204,6 +225,7 @@ export function MainNav() {
                     <span>{isUploading ? 'Uploading...' : 'Upload Resume'}</span>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem className="flex items-center gap-2" onSelect={handleSignOut}>
                   <LogOut size={16} />
                   <span>Log Out</span>
