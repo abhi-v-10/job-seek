@@ -17,3 +17,4 @@ export type Contact = {
   company?: string | null;
   work?: string | null;
 };
+
