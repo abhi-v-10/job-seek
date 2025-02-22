@@ -59,20 +59,31 @@ const SeekBot = () => {
             `
           });
 
+          // Set up event listeners after initialization
           window.botpressWebChat.onEvent(
             "LIFECYCLE.LOADED",
             () => {
+              console.log("Bot is ready");
               setIsBotReady(true);
-              window.botpressWebChat.onEvent(
-                "LIFECYCLE.OPEN",
-                () => setIsChatOpen(true)
-              );
-              window.botpressWebChat.onEvent(
-                "LIFECYCLE.CLOSE",
-                () => setIsChatOpen(false)
-              );
             }
           );
+
+          window.botpressWebChat.onEvent(
+            "LIFECYCLE.OPEN",
+            () => {
+              console.log("Chat opened");
+              setIsChatOpen(true);
+            }
+          );
+
+          window.botpressWebChat.onEvent(
+            "LIFECYCLE.CLOSE",
+            () => {
+              console.log("Chat closed");
+              setIsChatOpen(false);
+            }
+          );
+
         } catch (error) {
           console.error("Error initializing Botpress:", error);
         }
@@ -107,6 +118,7 @@ const SeekBot = () => {
 
   const handleChatToggle = () => {
     if (isBotReady && !isChatOpen && window.botpressWebChat) {
+      console.log("Opening chat");
       window.botpressWebChat.sendEvent({ type: "show" });
     }
   };
@@ -134,7 +146,7 @@ const SeekBot = () => {
         </div>
       </main>
 
-      {/* Chat Icon Button */}
+      {/* Chat Icon Button - Only show when chat is NOT open and bot is ready */}
       {!isChatOpen && isBotReady && (
         <Button
           onClick={handleChatToggle}
