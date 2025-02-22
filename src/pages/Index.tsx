@@ -34,7 +34,16 @@ const Index = () => {
           ) : jobs && jobs.length > 0 ? (
             <div className="grid gap-4">
               {jobs.map((job) => (
-                <JobCard key={job.id} {...job} />
+                <JobCard 
+                  key={job.id}
+                  company={job.company}
+                  position={job.position}
+                  location={job.location}
+                  salary={job.salary}
+                  type={job.type}
+                  level={job.level}
+                  postedAt={new Date(job.created_at)}
+                />
               ))}
             </div>
           ) : (

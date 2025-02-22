@@ -20,8 +20,8 @@ const Messages = () => {
         .from('messages')
         .select(`
           *,
-          sender:sender_id(username),
-          receiver:receiver_id(username)
+          sender:sender_id(id, username),
+          receiver:receiver_id(id, username)
         `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
@@ -71,8 +71,8 @@ const Messages = () => {
                     <div>
                       <p className="font-medium">
                         {message.sender_id === user.id ? 
-                          `To: ${message.receiver.username}` : 
-                          `From: ${message.sender.username}`}
+                          `To: ${message.receiver?.username}` : 
+                          `From: ${message.sender?.username}`}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(message.created_at).toLocaleString()}
