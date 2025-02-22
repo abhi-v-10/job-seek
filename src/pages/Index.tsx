@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MainNav } from "@/components/MainNav";
 import { JobCard } from "@/components/JobCard";
@@ -24,12 +25,27 @@ import {
 } from "@/components/ui/select";
 import { SlidersHorizontal, X } from "lucide-react";
 
+const HOURLY_WAGE_RANGES = [
+  "0-200",
+  "200-400",
+  "400-600",
+  "600-800",
+  "800-1000",
+  "1000+"
+];
+
+const EMPLOYMENT_TYPES = ["Full Time", "Part Time"];
+
 const Index = () => {
+  const [selectedJobType, setSelectedJobType] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
   const [selectedSalaryRange, setSelectedSalaryRange] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedWork, setSelectedWork] = useState<string | null>(null);
+  const [selectedHourlyWageRange, setSelectedHourlyWageRange] = useState<string | null>(null);
+  const [selectedDailyWorkTime, setSelectedDailyWorkTime] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const { data: jobs, isLoading } = useQuery({
@@ -45,63 +61,75 @@ const Index = () => {
     },
   });
 
-  // Get unique values for filter options
-  const locations = Array.from(new Set(jobs?.map(job => job.location) || []));
-  const companies = Array.from(new Set(jobs?.map(job => job.company) || []));
-  const positions = Array.from(new Set(jobs?.map(job => job.position) || []));
-  const types = Array.from(new Set(jobs?.map(job => job.type) || []));
+  // Generalize and normalize a string for comparison
+  const normalizeString = (str: string) => str.toLowerCase().trim().replace(/\s+/g, ' ');
 
-  // Predefined salary ranges
-  const salaryRanges = [
-    "0-50k",
-    "50k-100k",
-    "100k-150k",
-    "150k-200k",
-    "200k+"
-  ];
+  // Get unique values for filter options based on job type
+  const locations = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => {
+    const location = job.location.split(',')[0].trim(); // Get just the city or main area
+    return location.charAt(0).toUpperCase() + location.slice(1).toLowerCase(); // Capitalize first letter
+  }) || []));
 
-  // Helper function to check if a salary falls within a range
-  const isInSalaryRange = (salary: string, range: string) => {
-    if (!salary) return false;
-    const numericSalary = parseInt(salary.replace(/[^0-9]/g, ''));
-    if (isNaN(numericSalary)) return false;
+  const companies = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => job.company) || []));
+  const positions = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => job.position) || []));
+  const works = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.work) || []));
+  const dailyWorkTimes = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.daily_work_time) || []));
+
+  // Function to check if a wage falls within a range
+  const isInHourlyWageRange = (wage: string, range: string) => {
+    if (!wage) return false;
+    const numericWage = parseInt(wage.replace(/[^0-9]/g, ''));
+    if (isNaN(numericWage)) return false;
     
-    switch (range) {
-      case "0-50k":
-        return numericSalary <= 50000;
-      case "50k-100k":
-        return numericSalary > 50000 && numericSalary <= 100000;
-      case "100k-150k":
-        return numericSalary > 100000 && numericSalary <= 150000;
-      case "150k-200k":
-        return numericSalary > 150000 && numericSalary <= 200000;
-      case "200k+":
-        return numericSalary > 200000;
-      default:
-        return true;
-    }
+    const [min, max] = range.split('-').map(num => parseInt(num.replace(/\D/g, '')));
+    if (range.endsWith('+')) return numericWage >= min;
+    return numericWage >= min && numericWage <= max;
   };
 
   // Filter jobs based on selected criteria
   const filteredJobs = jobs?.filter(job => {
-    const matchesLocation = !selectedLocation || job.location === selectedLocation;
-    const matchesCompany = !selectedCompany || job.company === selectedCompany;
-    const matchesPosition = !selectedPosition || job.position === selectedPosition;
-    const matchesSalaryRange = !selectedSalaryRange || isInSalaryRange(job.salary, selectedSalaryRange);
-    const matchesType = !selectedType || job.type === selectedType;
-    
-    return matchesLocation && matchesCompany && matchesPosition && matchesSalaryRange && matchesType;
+    // First filter by job type
+    if (selectedJobType && job.job_type !== selectedJobType.toLowerCase()) return false;
+
+    if (job.job_type === 'corporate') {
+      const matchesLocation = !selectedLocation || 
+        normalizeString(job.location).includes(normalizeString(selectedLocation));
+      const matchesCompany = !selectedCompany || 
+        normalizeString(job.company || '').includes(normalizeString(selectedCompany));
+      const matchesPosition = !selectedPosition || 
+        normalizeString(job.position || '').includes(normalizeString(selectedPosition));
+      const matchesType = !selectedType || 
+        normalizeString(job.type || '').includes(normalizeString(selectedType));
+      
+      return matchesLocation && matchesCompany && matchesPosition && matchesType;
+    } else {
+      // Domestic job filters
+      const matchesWork = !selectedWork || 
+        normalizeString(job.work || '').includes(normalizeString(selectedWork));
+      const matchesHourlyWage = !selectedHourlyWageRange || 
+        isInHourlyWageRange(job.hourly_wage || '', selectedHourlyWageRange);
+      const matchesDailyWorkTime = !selectedDailyWorkTime || 
+        job.daily_work_time === parseInt(selectedDailyWorkTime);
+      
+      return matchesWork && matchesHourlyWage && matchesDailyWorkTime;
+    }
   });
 
   const clearFilters = () => {
+    setSelectedJobType(null);
     setSelectedLocation(null);
     setSelectedCompany(null);
     setSelectedPosition(null);
     setSelectedSalaryRange(null);
     setSelectedType(null);
+    setSelectedWork(null);
+    setSelectedHourlyWageRange(null);
+    setSelectedDailyWorkTime(null);
   };
 
-  const hasActiveFilters = selectedLocation || selectedCompany || selectedPosition || selectedSalaryRange || selectedType;
+  const hasActiveFilters = selectedJobType || selectedLocation || selectedCompany || 
+    selectedPosition || selectedSalaryRange || selectedType || selectedWork || 
+    selectedHourlyWageRange || selectedDailyWorkTime;
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,110 +166,192 @@ const Index = () => {
                   <DialogHeader>
                     <DialogTitle>Filter Jobs</DialogTitle>
                     <DialogDescription>
-                      Filter jobs by position, location, company, salary range, and employment type.
+                      Select job type and relevant filters to find the perfect match.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Select
-                        value={selectedPosition || ""}
-                        onValueChange={setSelectedPosition}
+                        value={selectedJobType || ""}
+                        onValueChange={(value) => {
+                          setSelectedJobType(value);
+                          // Clear other filters when job type changes
+                          setSelectedLocation(null);
+                          setSelectedCompany(null);
+                          setSelectedPosition(null);
+                          setSelectedType(null);
+                          setSelectedWork(null);
+                          setSelectedHourlyWageRange(null);
+                          setSelectedDailyWorkTime(null);
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select position" />
+                          <SelectValue placeholder="Select job type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            <SelectLabel>Position</SelectLabel>
-                            {positions.map((position) => (
-                              <SelectItem key={position} value={position}>
-                                {position}
-                              </SelectItem>
-                            ))}
+                            <SelectLabel>Job Type</SelectLabel>
+                            <SelectItem value="corporate">Corporate</SelectItem>
+                            <SelectItem value="domestic">Domestic</SelectItem>
                           </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Select
-                        value={selectedLocation || ""}
-                        onValueChange={setSelectedLocation}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Location</SelectLabel>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Select
-                        value={selectedCompany || ""}
-                        onValueChange={setSelectedCompany}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select company" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Company</SelectLabel>
-                            {companies.map((company) => (
-                              <SelectItem key={company} value={company}>
-                                {company}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Select
-                        value={selectedSalaryRange || ""}
-                        onValueChange={setSelectedSalaryRange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select salary range" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Salary Range</SelectLabel>
-                            {salaryRanges.map((range) => (
-                              <SelectItem key={range} value={range}>
-                                {range}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Select
-                        value={selectedType || ""}
-                        onValueChange={setSelectedType}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select employment type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Employment Type</SelectLabel>
-                            {types.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
+
+                    {selectedJobType === 'corporate' && (
+                      <>
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedPosition || ""}
+                            onValueChange={setSelectedPosition}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select position" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Position</SelectLabel>
+                                {positions.map((position) => (
+                                  <SelectItem key={position} value={position}>
+                                    {position}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedLocation || ""}
+                            onValueChange={setSelectedLocation}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Location</SelectLabel>
+                                {locations.map((location) => (
+                                  <SelectItem key={location} value={location}>
+                                    {location}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedCompany || ""}
+                            onValueChange={setSelectedCompany}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select company" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Company</SelectLabel>
+                                {companies.map((company) => (
+                                  <SelectItem key={company} value={company}>
+                                    {company}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedType || ""}
+                            onValueChange={setSelectedType}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select employment type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Employment Type</SelectLabel>
+                                {EMPLOYMENT_TYPES.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedJobType === 'domestic' && (
+                      <>
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedWork || ""}
+                            onValueChange={setSelectedWork}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select work type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Work</SelectLabel>
+                                {works.map((work) => (
+                                  <SelectItem key={work} value={work}>
+                                    {work}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedHourlyWageRange || ""}
+                            onValueChange={setSelectedHourlyWageRange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select hourly wage range" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Hourly Wage Range</SelectLabel>
+                                {HOURLY_WAGE_RANGES.map((range) => (
+                                  <SelectItem key={range} value={range}>
+                                    {range}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedDailyWorkTime?.toString() || ""}
+                            onValueChange={(value) => setSelectedDailyWorkTime(value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select daily work hours" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Daily Work Hours</SelectLabel>
+                                {dailyWorkTimes.map((time) => (
+                                  <SelectItem key={time} value={time.toString()}>
+                                    {time} hours
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -250,6 +360,15 @@ const Index = () => {
 
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2">
+              {selectedJobType && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedJobType}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedJobType(null)}
+                  />
+                </Badge>
+              )}
               {selectedPosition && (
                 <Badge variant="secondary" className="gap-2">
                   {selectedPosition}
@@ -277,21 +396,39 @@ const Index = () => {
                   />
                 </Badge>
               )}
-              {selectedSalaryRange && (
-                <Badge variant="secondary" className="gap-2">
-                  {selectedSalaryRange}
-                  <X
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() => setSelectedSalaryRange(null)}
-                  />
-                </Badge>
-              )}
               {selectedType && (
                 <Badge variant="secondary" className="gap-2">
                   {selectedType}
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => setSelectedType(null)}
+                  />
+                </Badge>
+              )}
+              {selectedWork && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedWork}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedWork(null)}
+                  />
+                </Badge>
+              )}
+              {selectedHourlyWageRange && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedHourlyWageRange}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedHourlyWageRange(null)}
+                  />
+                </Badge>
+              )}
+              {selectedDailyWorkTime && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedDailyWorkTime} hours
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedDailyWorkTime(null)}
                   />
                 </Badge>
               )}
@@ -329,3 +466,4 @@ const Index = () => {
 }
 
 export default Index;
+
