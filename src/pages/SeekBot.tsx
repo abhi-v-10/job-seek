@@ -18,6 +18,7 @@ declare global {
 const SeekBot = () => {
   const navigate = useNavigate();
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isBotReady, setIsBotReady] = useState(false);
 
   useEffect(() => {
     // Add Botpress script
@@ -29,61 +30,72 @@ const SeekBot = () => {
     script2.src = "https://files.bpcontent.cloud/2025/02/22/12/20250222122058-B0CN79X3.js";
     script2.async = true;
 
-    document.body.appendChild(script1);
+    const initializeBot = () => {
+      if (typeof window.botpressWebChat !== 'undefined') {
+        try {
+          window.botpressWebChat.init({
+            composerPlaceholder: "Chat with SeekBot...",
+            showConversationsButton: false,
+            containerWidth: '100%',
+            layoutWidth: '100%',
+            hideWidget: true,
+            stylesheet: `
+              :root {
+                --main-bg-color: #ffffff;
+                --composer-bg-color: #f3f4f6;
+                --composer-text-color: #374151;
+              }
+              .bpw-layout {
+                width: 100% !important;
+                height: calc(100vh - 150px) !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+              }
+              .bpw-header-container {
+                padding: 1rem !important;
+                border-top-left-radius: 0 !important;
+                border-top-right-radius: 0 !important;
+              }
+            `
+          });
 
+          window.botpressWebChat.onEvent(
+            "LIFECYCLE.LOADED",
+            () => {
+              setIsBotReady(true);
+              window.botpressWebChat.onEvent(
+                "WEBSOCKET.STATE_CHANGED",
+                (event: any) => {
+                  setIsChatOpen(event.connected);
+                }
+              );
+            }
+          );
+        } catch (error) {
+          console.error("Error initializing Botpress:", error);
+        }
+      }
+    };
+
+    const checkBotpress = setInterval(() => {
+      if (typeof window.botpressWebChat !== 'undefined') {
+        clearInterval(checkBotpress);
+        initializeBot();
+      }
+    }, 100);
+
+    document.body.appendChild(script1);
     script1.onload = () => {
       document.body.appendChild(script2);
-
-      script2.onload = () => {
-        // Initialize chat with custom configuration
-        window.botpressWebChat.init({
-          composerPlaceholder: "Chat with SeekBot...",
-          showConversationsButton: false,
-          containerWidth: '100%',
-          layoutWidth: '100%',
-          hideWidget: true,
-          stylesheet: `
-            :root {
-              --main-bg-color: #ffffff;
-              --composer-bg-color: #f3f4f6;
-              --composer-text-color: #374151;
-            }
-            .bpw-layout {
-              width: 100% !important;
-              height: calc(100vh - 150px) !important;
-              border-radius: 0 !important;
-              margin: 0 !important;
-            }
-            .bpw-header-container {
-              padding: 1rem !important;
-              border-top-left-radius: 0 !important;
-              border-top-right-radius: 0 !important;
-            }
-          `
-        });
-
-        // Listen for chat events
-        window.botpressWebChat.onEvent(
-          "LIFECYCLE.LOADED", 
-          () => {
-            window.botpressWebChat.onEvent(
-              "WEBSOCKET.STATE_CHANGED",
-              (event: any) => {
-                setIsChatOpen(event.connected);
-              }
-            );
-          }
-        );
-      };
     };
 
     // Clean up on unmount
     return () => {
+      clearInterval(checkBotpress);
       document.body.removeChild(script1);
       if (document.body.contains(script2)) {
         document.body.removeChild(script2);
       }
-      // Remove the webchat container if it exists
       const webchatContainer = document.getElementById("bp-web-widget");
       if (webchatContainer) {
         document.body.removeChild(webchatContainer);
@@ -92,7 +104,7 @@ const SeekBot = () => {
   }, []);
 
   const handleChatToggle = () => {
-    if (!isChatOpen) {
+    if (isBotReady && !isChatOpen && window.botpressWebChat) {
       window.botpressWebChat.sendEvent({ type: "show" });
     }
   };
@@ -121,7 +133,7 @@ const SeekBot = () => {
       </main>
 
       {/* Chat Icon Button */}
-      {!isChatOpen && (
+      {!isChatOpen && isBotReady && (
         <Button
           onClick={handleChatToggle}
           className="fixed bottom-6 right-6 rounded-full w-12 h-12 p-0"
@@ -135,4 +147,3 @@ const SeekBot = () => {
 };
 
 export default SeekBot;
-
