@@ -1,3 +1,4 @@
+
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -122,7 +123,7 @@ export function JobCard({
 
   return (
     <>
-      <div className={`job-card animate-in ${jobType === 'corporate' ? '!bg-[#2C7A7B]' : ''}`}>
+      <div className={`job-card animate-in ${jobType === 'corporate' ? '!bg-[#2C7A7B]' : '!bg-[#123524]'}`}>
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-4">
             <JobLogo logo={logo} company={company} work={work} jobType={jobType} />
