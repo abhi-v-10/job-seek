@@ -1,41 +1,23 @@
 
+import { useQuery } from "@tanstack/react-query";
 import { MainNav } from "@/components/MainNav";
 import { JobCard } from "@/components/JobCard";
-
-const MOCK_JOBS = [
-  {
-    id: 1,
-    company: "TechCorp",
-    position: "Senior Frontend Developer",
-    location: "San Francisco, CA",
-    salary: "$120k - $150k",
-    type: "Full-time",
-    level: "Senior",
-    postedAt: new Date("2024-02-15")
-  },
-  {
-    id: 2,
-    company: "DesignHub",
-    position: "UI/UX Designer",
-    location: "Remote",
-    salary: "$90k - $120k",
-    type: "Full-time",
-    level: "Mid-level",
-    postedAt: new Date("2024-02-14")
-  },
-  {
-    id: 3,
-    company: "StartupX",
-    position: "Product Manager",
-    location: "New York, NY",
-    salary: "$130k - $160k",
-    type: "Full-time",
-    level: "Senior",
-    postedAt: new Date("2024-02-13")
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const { data: jobs, isLoading } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <MainNav />
@@ -47,11 +29,17 @@ const Index = () => {
               Find your next opportunity from our curated list of positions
             </p>
           </div>
-          <div className="grid gap-4">
-            {MOCK_JOBS.map((job) => (
-              <JobCard key={job.id} {...job} />
-            ))}
-          </div>
+          {isLoading ? (
+            <p>Loading jobs...</p>
+          ) : jobs && jobs.length > 0 ? (
+            <div className="grid gap-4">
+              {jobs.map((job) => (
+                <JobCard key={job.id} {...job} />
+              ))}
+            </div>
+          ) : (
+            <p>No jobs found. Be the first to post a job!</p>
+          )}
         </div>
       </main>
     </div>
