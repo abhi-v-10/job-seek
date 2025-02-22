@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-const positions = [
+type CorporatePosition = Database["public"]["Enums"]["corporate_position"];
+type EmploymentType = Database["public"]["Enums"]["employment_type"];
+
+const positions: CorporatePosition[] = [
   "software_developer",
   "software_designer",
   "frontend_developer",
@@ -26,9 +31,9 @@ const positions = [
   "devops_engineer",
   "data_scientist",
   "system_architect",
-] as const;
+];
 
-const employmentTypes = ["full_time", "part_time"] as const;
+const employmentTypes: EmploymentType[] = ["full_time", "part_time"];
 
 const salaryRanges = [
   { min: 300000, max: 500000 },
@@ -49,27 +54,30 @@ const experienceRanges = [
 
 export function CorporateJobForm() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     companyName: "",
-    position: "",
+    position: "" as CorporatePosition,
     location: "",
     salaryRange: "",
-    employmentType: "",
+    employmentType: "" as EmploymentType,
     yearsOfExperience: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setIsSubmitting(true);
 
     const [minSalary, maxSalary] = formData.salaryRange.split("-").map(Number);
 
     try {
       const { error } = await supabase.from("jobs").insert({
-        category: "corporate",
+        user_id: user.id,
+        category: "corporate" as const,
         company_name: formData.companyName,
         position: formData.position,
         location: formData.location,
@@ -87,7 +95,7 @@ export function CorporateJobForm() {
       });
       
       navigate("/jobs");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error posting job:", error);
       toast({
         title: "Error",
@@ -119,7 +127,7 @@ export function CorporateJobForm() {
           <Select
             required
             value={formData.position}
-            onValueChange={(value) =>
+            onValueChange={(value: CorporatePosition) =>
               setFormData({ ...formData, position: value })
             }
           >
@@ -178,7 +186,7 @@ export function CorporateJobForm() {
           <Select
             required
             value={formData.employmentType}
-            onValueChange={(value) =>
+            onValueChange={(value: EmploymentType) =>
               setFormData({ ...formData, employmentType: value })
             }
           >

@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-const workTypes = [
+type DomesticWorkType = Database["public"]["Enums"]["domestic_work_type"];
+
+const workTypes: DomesticWorkType[] = [
   "gardening",
   "housekeeping",
   "cooking",
@@ -22,7 +26,7 @@ const workTypes = [
   "driving",
   "pet_care",
   "home_maintenance",
-] as const;
+];
 
 const hourlyWageRanges = [
   { min: 100, max: 150 },
@@ -35,11 +39,12 @@ const hourlyWageRanges = [
 
 export function DomesticJobForm() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    workType: "",
+    workType: "" as DomesticWorkType,
     location: "",
     dailyHours: "",
     hourlyWageRange: "",
@@ -47,13 +52,15 @@ export function DomesticJobForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setIsSubmitting(true);
 
     const [minWage, maxWage] = formData.hourlyWageRange.split("-").map(Number);
 
     try {
       const { error } = await supabase.from("jobs").insert({
-        category: "domestic",
+        user_id: user.id,
+        category: "domestic" as const,
         work_type: formData.workType,
         location: formData.location,
         daily_hours: parseInt(formData.dailyHours),
@@ -69,7 +76,7 @@ export function DomesticJobForm() {
       });
       
       navigate("/jobs");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error posting job:", error);
       toast({
         title: "Error",
@@ -89,7 +96,7 @@ export function DomesticJobForm() {
           <Select
             required
             value={formData.workType}
-            onValueChange={(value) =>
+            onValueChange={(value: DomesticWorkType) =>
               setFormData({ ...formData, workType: value })
             }
           >
