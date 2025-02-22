@@ -35,6 +35,43 @@ const Index = () => {
     },
   });
 
+  // Sample corporate jobs for display
+  const sampleJobs = [
+    {
+      id: 'sample-1',
+      company: 'TechCorp Solutions',
+      position: 'Senior Frontend Developer',
+      location: 'San Francisco, CA',
+      salary: '$120,000 - $180,000',
+      type: 'Full-time',
+      level: 'Senior',
+      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      job_type: 'corporate'
+    },
+    {
+      id: 'sample-2',
+      company: 'Innovation Labs',
+      position: 'Product Manager',
+      location: 'New York, NY',
+      salary: '$130,000 - $170,000',
+      type: 'Full-time',
+      level: 'Mid-Level',
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      job_type: 'corporate'
+    },
+    {
+      id: 'sample-3',
+      company: 'Cloud Systems Inc',
+      position: 'DevOps Engineer',
+      location: 'Austin, TX',
+      salary: '$110,000 - $160,000',
+      type: 'Full-time',
+      level: 'Mid-Level',
+      created_at: new Date().toISOString(), // Today
+      job_type: 'corporate'
+    }
+  ];
+
   // Get unique values for filter options based on job type
   const locations = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => {
     const location = job.location.split(',')[0].trim();
@@ -163,10 +200,29 @@ const Index = () => {
             />
           )}
 
+          {/* Display sample jobs first */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sampleJobs.map((job) => (
+              <JobCard
+                key={job.id}
+                id={job.id}
+                company={job.company}
+                position={job.position}
+                location={job.location}
+                salary={job.salary}
+                type={job.type}
+                level={job.level}
+                postedAt={new Date(job.created_at)}
+                jobType={job.job_type}
+              />
+            ))}
+          </div>
+
+          {/* Display fetched jobs */}
           {isLoading ? (
             <p>Loading jobs...</p>
           ) : filteredJobs && filteredJobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               {filteredJobs.map((job) => (
                 <JobCard 
                   key={job.id}
@@ -185,7 +241,7 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <p>No jobs found matching your filters. Try adjusting your search criteria.</p>
+            <p className="mt-6">No jobs found matching your filters. Try adjusting your search criteria.</p>
           )}
         </div>
       </main>
@@ -195,3 +251,4 @@ const Index = () => {
 }
 
 export default Index;
+
