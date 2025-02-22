@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -30,12 +31,8 @@ interface Message {
   created_at: string;
   sender_id: string;
   receiver_id: string;
-}
-
-// Define the combined interface for messages with profile data
-interface MessageWithProfiles extends Message {
-  sender: Profile;
-  receiver: Profile;
+  sender?: Profile;
+  receiver?: Profile;
 }
 
 const Messages = () => {
@@ -46,7 +43,7 @@ const Messages = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const { data: messages, isLoading } = useQuery<MessageWithProfiles[]>({
+  const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -66,7 +63,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as MessageWithProfiles[];
+      return data as Message[];
     },
     enabled: !!user,
   });
@@ -184,6 +181,9 @@ const Messages = () => {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Start a new chat</DialogTitle>
+              <DialogDescription>
+                Enter the email address of the person you want to chat with.
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
@@ -212,3 +212,4 @@ const Messages = () => {
 }
 
 export default Messages;
+
