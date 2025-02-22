@@ -50,6 +50,22 @@
 
 .job-card {
   @apply relative p-6 rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md hover:bg-card-hover;
+  animation: border-glow 4s ease-in-out infinite;
+}
+
+@keyframes border-glow {
+  0% {
+    box-shadow: 0 0 5px #9b87f5, 0 0 10px #9b87f5, 0 0 15px #9b87f5;
+  }
+  33% {
+    box-shadow: 0 0 5px #0EA5E9, 0 0 10px #0EA5E9, 0 0 15px #0EA5E9;
+  }
+  66% {
+    box-shadow: 0 0 5px #D946EF, 0 0 10px #D946EF, 0 0 15px #D946EF;
+  }
+  100% {
+    box-shadow: 0 0 5px #9b87f5, 0 0 10px #9b87f5, 0 0 15px #9b87f5;
+  }
 }
 
 .animate-in {
@@ -90,4 +106,3 @@
   }
 }
 
-/* ... keep existing code */
