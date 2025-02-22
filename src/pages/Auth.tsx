@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Github, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { PhoneInput } from "@/components/PhoneInput";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -97,12 +98,10 @@ const Auth = () => {
                   onChange={(e) => setFullName(e.target.value)}
                   required={isSignUp}
                 />
-                <Input
-                  type="tel"
-                  placeholder="Mobile Number"
+                <PhoneInput
                   value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value)}
-                  required={isSignUp}
+                  onChange={setMobileNumber}
+                  className="w-full"
                 />
               </>
             )}

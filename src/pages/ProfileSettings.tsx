@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { PhoneInput } from "@/components/PhoneInput";
 
 function ProfileForm({ profile, onSubmit }: { 
   profile: any; 
@@ -35,10 +36,10 @@ function ProfileForm({ profile, onSubmit }: {
         </label>
         <Input
           id="email"
+          name="email"
           type="email"
-          value={user?.email || ''}
-          disabled
-          className="bg-gray-100"
+          defaultValue={user?.email || ''}
+          placeholder="Enter your email"
         />
       </div>
 
@@ -46,12 +47,14 @@ function ProfileForm({ profile, onSubmit }: {
         <label htmlFor="mobileNumber" className="text-sm font-medium">
           Mobile Number
         </label>
-        <Input
-          id="mobileNumber"
-          name="mobileNumber"
-          defaultValue={profile?.mobile_number || ''}
-          placeholder="Enter your mobile number"
+        <PhoneInput
+          value={profile?.mobile_number || ''}
+          onChange={(value) => {
+            const input = document.querySelector('input[name="mobileNumber"]') as HTMLInputElement;
+            if (input) input.value = value;
+          }}
         />
+        <input type="hidden" name="mobileNumber" defaultValue={profile?.mobile_number || ''} />
       </div>
 
       <Button type="submit">
@@ -99,7 +102,18 @@ export default function ProfileSettings() {
       mobile_number: formData.get('mobileNumber')?.toString() || '',
     };
 
+    const email = formData.get('email')?.toString();
+    
     try {
+      // Update email if changed
+      if (email && email !== user.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: email,
+        });
+        if (emailError) throw emailError;
+      }
+
+      // Update profile data
       const { error } = await supabase
         .from("profiles")
         .update(updates)
@@ -113,7 +127,9 @@ export default function ProfileSettings() {
 
       toast({
         title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        description: email !== user.email 
+          ? "Your profile has been updated. Please check your email to confirm the email change."
+          : "Your profile has been updated successfully.",
       });
     } catch (error: any) {
       toast({
