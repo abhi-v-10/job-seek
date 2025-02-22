@@ -8,6 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { CorporateJobForm } from "@/components/jobs/CorporateJobForm";
 import { DomesticJobForm } from "@/components/jobs/DomesticJobForm";
+import { JobTypeSelector } from "@/components/jobs/JobTypeSelector";
+import { useCorporateFormState, useDomesticFormState } from "@/hooks/useJobFormState";
+import { uploadJobImage } from "@/utils/imageUpload";
 
 const PostJob = () => {
   const { user } = useAuth();
@@ -16,20 +19,9 @@ const PostJob = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobType, setJobType] = useState<"corporate" | "domestic" | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [corporateFormData, setCorporateFormData] = useState({
-    company: "",
-    position: "",
-    location: "",
-    salary: "",
-    type: "Full Time",
-    experience: "",
-  });
-  const [domesticFormData, setDomesticFormData] = useState({
-    work: "",
-    dailyWorkTime: "",
-    location: "",
-    hourlyWage: "",
-  });
+  
+  const { corporateFormData, handleCorporateChange } = useCorporateFormState();
+  const { domesticFormData, handleDomesticChange } = useDomesticFormState();
 
   const handleImageUpload = (file: File) => {
     setSelectedImage(file);
@@ -50,27 +42,7 @@ const PostJob = () => {
     setIsSubmitting(true);
 
     try {
-      let logoUrl = null;
-      
-      if (selectedImage) {
-        const fileExt = selectedImage.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        
-        const { error: uploadError, data } = await supabase.storage
-          .from('job-images')
-          .upload(fileName, selectedImage);
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('job-images')
-          .getPublicUrl(fileName);
-
-        logoUrl = publicUrl;
-      }
+      const logoUrl = selectedImage ? await uploadJobImage(selectedImage) : null;
 
       const jobData = jobType === "corporate"
         ? {
@@ -95,7 +67,7 @@ const PostJob = () => {
             posted_by: user.id
           };
 
-      const { error: insertError, data: insertedJob } = await supabase
+      const { error: insertError } = await supabase
         .from("jobs")
         .insert(jobData)
         .select()
@@ -123,15 +95,6 @@ const PostJob = () => {
     }
   };
 
-  const handleCorporateChange = (name: string, value: string) => {
-    setCorporateFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleDomesticChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setDomesticFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
@@ -155,27 +118,7 @@ const PostJob = () => {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="max-w-2xl">
           {!jobType ? (
-            <div>
-              <h1 className="text-3xl font-bold">Post a Job</h1>
-              <p className="text-muted-foreground mt-2">
-                Which type of job do you want to post?
-              </p>
-              <div className="mt-8 space-y-4">
-                <Button
-                  className="w-full"
-                  onClick={() => setJobType("corporate")}
-                >
-                  Corporate Job
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setJobType("domestic")}
-                >
-                  Domestic Job
-                </Button>
-              </div>
-            </div>
+            <JobTypeSelector onSelect={setJobType} />
           ) : jobType === "corporate" ? (
             <CorporateJobForm
               formData={corporateFormData}
@@ -202,3 +145,4 @@ const PostJob = () => {
 };
 
 export default PostJob;
+
