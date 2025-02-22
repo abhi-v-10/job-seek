@@ -35,11 +35,7 @@ export function ChatWindow({
   return (
     <div className="flex-1 border rounded-lg p-4">
       <div className="h-full flex flex-col">
-        <ChatHeader
-          fullName={contact.full_name || "Unknown"}
-          jobTitle={contact.job_title}
-          company={contact.company}
-        />
+        <ChatHeader fullName={contact.full_name || "Unknown"} />
         <Suspense fallback={<div>Loading messages...</div>}>
           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
             {messages.map((message) => (

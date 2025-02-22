@@ -17,15 +17,10 @@ export function ContactsList({ contacts, selectedContact, onContactSelect }: Con
           <Button
             key={contact.id}
             variant={selectedContact?.id === contact.id ? "default" : "outline"}
-            className="w-full justify-start flex flex-col items-start"
+            className="w-full justify-start"
             onClick={() => onContactSelect(contact)}
           >
-            <span>{contact.full_name || "Unknown"}</span>
-            {contact.job_title && (
-              <span className="text-xs text-muted-foreground">
-                {contact.company ? `${contact.job_title} at ${contact.company}` : contact.job_title}
-              </span>
-            )}
+            {contact.full_name || "Unknown"}
           </Button>
         ))}
       </div>
