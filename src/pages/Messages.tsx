@@ -17,13 +17,14 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Define types for the message data structure
-type Profile = {
+// Define interface for profile data
+interface Profile {
   id: string;
-  username: string;
-};
+  username: string | null;
+}
 
-type Message = {
+// Define interface for messages with profile relations
+interface MessageWithProfiles {
   id: string;
   content: string;
   created_at: string;
@@ -31,7 +32,7 @@ type Message = {
   receiver_id: string;
   sender: Profile;
   receiver: Profile;
-};
+}
 
 const Messages = () => {
   const { user } = useAuth();
@@ -41,10 +42,11 @@ const Messages = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const { data: messages, isLoading } = useQuery<Message[]>({
+  const { data: messages, isLoading } = useQuery<MessageWithProfiles[]>({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user) return [];
+      
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -60,7 +62,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      return (data as MessageWithProfiles[]) || [];
     },
     enabled: !!user,
   });
@@ -206,4 +208,3 @@ const Messages = () => {
 }
 
 export default Messages;
-
