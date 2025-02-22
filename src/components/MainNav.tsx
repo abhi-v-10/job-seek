@@ -1,14 +1,49 @@
 
-import { Link, useNavigate } from "react-router-dom";
-import { Search, LogIn } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Search, MessageSquare, Briefcase, Plus, LogIn, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { NavigationLinks } from "./navigation/NavigationLinks";
-import { UserDropdown } from "./navigation/UserDropdown";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export function MainNav() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const navItems = [
+    {
+      title: "Jobs",
+      href: "/",
+      icon: Briefcase
+    },
+    {
+      title: "Messages",
+      href: "/messages",
+      icon: MessageSquare
+    },
+    {
+      title: "Post Job",
+      href: "/post-job",
+      icon: Plus
+    }
+  ];
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <nav className="bg-[#18181B] text-white px-6 py-4 sticky top-0 z-50">
@@ -17,14 +52,43 @@ export function MainNav() {
           <Link to="/" className="text-xl font-bold">
             JobSeek
           </Link>
-          <NavigationLinks />
+          <div className="hidden md:flex space-x-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center space-x-2 text-sm transition-colors hover:text-white/80",
+                  location.pathname === item.href
+                    ? "text-white"
+                    : "text-white/60"
+                )}
+              >
+                <item.icon size={18} />
+                <span>{item.title}</span>
+              </Link>
+            ))}
+          </div>
         </div>
         <div className="flex items-center space-x-4">
           <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <Search size={20} />
           </button>
           {user ? (
-            <UserDropdown user={user} />
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white"
+                onClick={handleSignOut}
+              >
+                Sign out
+              </Button>
+              <Button variant="secondary" size="sm" className="flex items-center">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+            </div>
           ) : (
             <Button
               variant="secondary"
