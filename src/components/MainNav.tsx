@@ -1,7 +1,7 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, MessageSquare, Briefcase, Plus, LogIn, User, Settings, Upload, LogOut } from "lucide-react";
+import { Search, MessageSquare, Briefcase, Plus, LogIn, User, Settings, Upload, LogOut, File } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function MainNav() {
   const location = useLocation();
@@ -20,6 +20,7 @@ export function MainNav() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   
   const navItems = [
     {
@@ -38,6 +39,35 @@ export function MainNav() {
       icon: Plus
     }
   ];
+
+  useEffect(() => {
+    if (user) {
+      checkExistingResume();
+    }
+  }, [user]);
+
+  const checkExistingResume = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('resumes')
+        .list(`${user?.id}/`, {
+          limit: 1,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const { data: resumeData } = await supabase.storage
+          .from('resumes')
+          .createSignedUrl(`${user?.id}/${data[0].name}`, 3600);
+
+        setResumeUrl(resumeData?.signedUrl || null);
+      }
+    } catch (error: any) {
+      console.error('Error checking resume:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -69,9 +99,9 @@ export function MainNav() {
     try {
       setIsUploading(true);
       
-      // Upload file to Supabase Storage
+      // Upload file to Supabase Storage in user's folder
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}-resume.${fileExt}`;
+      const fileName = `${user?.id}/resume.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('resumes')
@@ -80,6 +110,13 @@ export function MainNav() {
         });
 
       if (uploadError) throw uploadError;
+
+      // Get signed URL for the uploaded file
+      const { data: resumeData } = await supabase.storage
+        .from('resumes')
+        .createSignedUrl(fileName, 3600);
+
+      setResumeUrl(resumeData?.signedUrl || null);
 
       toast({
         title: "Success",
@@ -93,6 +130,12 @@ export function MainNav() {
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleViewResume = () => {
+    if (resumeUrl) {
+      window.open(resumeUrl, '_blank');
     }
   };
 
@@ -138,22 +181,29 @@ export function MainNav() {
                   <Settings size={16} />
                   <span>Profile Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2" onSelect={(e) => {
-                  e.preventDefault();
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = '.pdf,.png';
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) {
-                      handleFileUpload(file);
-                    }
-                  };
-                  input.click();
-                }}>
-                  <Upload size={16} />
-                  <span>{isUploading ? 'Uploading...' : 'Upload Resume'}</span>
-                </DropdownMenuItem>
+                {resumeUrl ? (
+                  <DropdownMenuItem className="flex items-center gap-2" onSelect={handleViewResume}>
+                    <File size={16} />
+                    <span>View Resume</span>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem className="flex items-center gap-2" onSelect={(e) => {
+                    e.preventDefault();
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.pdf,.png';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        handleFileUpload(file);
+                      }
+                    };
+                    input.click();
+                  }}>
+                    <Upload size={16} />
+                    <span>{isUploading ? 'Uploading...' : 'Upload Resume'}</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem className="flex items-center gap-2" onSelect={handleSignOut}>
                   <LogOut size={16} />
                   <span>Log Out</span>
