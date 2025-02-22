@@ -9,65 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      jobs: {
-        Row: {
-          company: string | null
-          created_at: string | null
-          daily_work_time: number | null
-          hourly_wage: string | null
-          id: string
-          job_type: string
-          level: string | null
-          location: string
-          position: string | null
-          posted_by: string
-          salary: string
-          type: string | null
-          updated_at: string | null
-          work: string | null
-        }
-        Insert: {
-          company?: string | null
-          created_at?: string | null
-          daily_work_time?: number | null
-          hourly_wage?: string | null
-          id?: string
-          job_type?: string
-          level?: string | null
-          location: string
-          position?: string | null
-          posted_by: string
-          salary: string
-          type?: string | null
-          updated_at?: string | null
-          work?: string | null
-        }
-        Update: {
-          company?: string | null
-          created_at?: string | null
-          daily_work_time?: number | null
-          hourly_wage?: string | null
-          id?: string
-          job_type?: string
-          level?: string | null
-          location?: string
-          position?: string | null
-          posted_by?: string
-          salary?: string
-          type?: string | null
-          updated_at?: string | null
-          work?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "jobs_posted_by_fkey"
-            columns: ["posted_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       messages: {
         Row: {
           content: string
