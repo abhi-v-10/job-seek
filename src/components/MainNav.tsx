@@ -1,17 +1,25 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, MessageSquare, Briefcase, Plus, LogIn, User } from "lucide-react";
+import { Search, MessageSquare, Briefcase, Plus, LogIn, User, Settings, Upload, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 export function MainNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
   
   const navItems = [
     {
@@ -45,6 +53,50 @@ export function MainNav() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    if (!['application/pdf', 'image/png'].includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a PDF document or PNG image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}-resume.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('resumes')
+        .upload(fileName, file, {
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      toast({
+        title: "Success",
+        description: "Resume uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error uploading resume",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <nav className="bg-[#18181B] text-white px-6 py-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -75,20 +127,35 @@ export function MainNav() {
             <Search size={20} />
           </button>
           {user ? (
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white"
-                onClick={handleSignOut}
-              >
-                Sign out
-              </Button>
-              <Button variant="secondary" size="sm" className="flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="sm" className="flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="flex items-center gap-2">
+                  <Settings size={16} />
+                  <span>Profile Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2" onSelect={(e) => {
+                  e.preventDefault();
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.pdf,.png';
+                  input.onchange = handleFileUpload;
+                  input.click();
+                }}>
+                  <Upload size={16} />
+                  <span>{isUploading ? 'Uploading...' : 'Upload Resume'}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2" onSelect={handleSignOut}>
+                  <LogOut size={16} />
+                  <span>Log Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button
               variant="secondary"
