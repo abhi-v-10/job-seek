@@ -38,7 +38,7 @@ export function Footer() {
               Built with <span className="text-accent">♥</span> by
             </p>
             <div className="flex flex-wrap justify-center gap-x-4 text-sm font-medium">
-              <span className="text-foreground hover:text-accent transition-colors">Abhisyanth</span>
+              <span className="text-foreground hover:text-accent transition-colors">Abhishyanth</span>
               <span className="text-foreground hover:text-accent transition-colors">Paardhiv Reddy</span>
               <span className="text-foreground hover:text-accent transition-colors">Jithendhra</span>
             </div>
