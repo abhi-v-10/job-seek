@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { CorporateJobForm } from "@/components/jobs/CorporateJobForm";
 import { DomesticJobForm } from "@/components/jobs/DomesticJobForm";
 
@@ -32,7 +32,6 @@ const PostJob = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!user) {
       toast({
         title: "Authentication required",
@@ -43,31 +42,8 @@ const PostJob = () => {
       return;
     }
 
-    // Validate form data
-    if (jobType === "corporate") {
-      if (!corporateFormData.company || !corporateFormData.position || !corporateFormData.location || !corporateFormData.salary) {
-        toast({
-          title: "Missing information",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else if (jobType === "domestic") {
-      if (!domesticFormData.work || !domesticFormData.dailyWorkTime || !domesticFormData.location || !domesticFormData.hourlyWage) {
-        toast({
-          title: "Missing information",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
     setIsSubmitting(true);
     try {
-      console.log("Creating job with user ID:", user.id);
-
       const jobData = jobType === "corporate"
         ? {
             company: corporateFormData.company,
@@ -76,8 +52,7 @@ const PostJob = () => {
             salary: corporateFormData.salary,
             type: corporateFormData.type,
             level: corporateFormData.experience,
-            job_type: "corporate",
-            posted_by: user.id,
+            job_type: "corporate"
           }
         : {
             work: domesticFormData.work,
@@ -85,22 +60,15 @@ const PostJob = () => {
             location: domesticFormData.location,
             hourly_wage: domesticFormData.hourlyWage,
             salary: domesticFormData.hourlyWage + " per hour",
-            job_type: "domestic",
-            posted_by: user.id,
+            job_type: "domestic"
           };
 
-      const { data, error } = await supabase
-        .from("jobs")
-        .insert(jobData)
-        .select()
-        .single();
+      const { error } = await supabase.from("jobs").insert({
+        ...jobData,
+        posted_by: user.id,
+      });
 
-      if (error) {
-        console.error("Error creating job:", error);
-        throw error;
-      }
-
-      console.log("Job created successfully:", data);
+      if (error) throw error;
 
       toast({
         title: "Success!",
@@ -108,10 +76,9 @@ const PostJob = () => {
       });
       navigate("/");
     } catch (error: any) {
-      console.error("Error in job creation:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create job",
+        description: error.message,
         variant: "destructive",
       });
     } finally {

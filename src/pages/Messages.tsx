@@ -87,28 +87,6 @@ export default function Messages() {
     enabled: !!selectedContact?.id && !!user?.id,
   });
 
-  // Mark messages as read when viewing them
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      if (!user?.id || !selectedContact?.id) return;
-
-      try {
-        await supabase
-          .from("messages")
-          .update({ read: true })
-          .eq("receiver_id", user.id)
-          .eq("sender_id", selectedContact.id);
-
-        // Invalidate the unread messages query to update the notification dot
-        queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
-      } catch (error: any) {
-        console.error("Error marking messages as read:", error);
-      }
-    };
-
-    markMessagesAsRead();
-  }, [selectedContact?.id, user?.id, queryClient]);
-
   // Subscribe to new messages
   useEffect(() => {
     if (!user?.id || !selectedContact?.id) return;
@@ -125,7 +103,6 @@ export default function Messages() {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
-          queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
         }
       )
       .subscribe();
@@ -150,8 +127,7 @@ export default function Messages() {
         content: messageInput,
         sender_id: user.id,
         receiver_id: selectedContact.id,
-        job_id: selectedContact.job_id,
-        read: false
+        job_id: selectedContact.job_id
       });
 
       if (error) throw error;
@@ -201,4 +177,3 @@ export default function Messages() {
     </div>
   );
 }
-

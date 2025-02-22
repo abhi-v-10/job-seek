@@ -6,7 +6,6 @@ export type Message = {
   receiver_id: string;
   created_at: string;
   job_id: string | null;
-  read: boolean;
 };
 
 export type Contact = {
@@ -17,4 +16,3 @@ export type Contact = {
   company?: string | null;
   work?: string | null;
 };
-
