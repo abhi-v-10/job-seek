@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -60,10 +59,10 @@ export default {
           hover: "hsl(var(--card-hover))",
         },
         custom: {
-          amber: {
-            light: "#FDE68A",
-            DEFAULT: "#F59E0B",
-            dark: "#B45309",
+          blue: {
+            light: "#93C5FD",
+            DEFAULT: "#3B82F6",
+            dark: "#1D4ED8",
           },
           charcoal: {
             light: "#4B5563",
@@ -114,4 +113,3 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;
-

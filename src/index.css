@@ -1,11 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Deep, moody base colors */
+    /* Deep, moody base colors with blue accent */
     --background: 220 20% 8%;
     --foreground: 40 25% 98%;
  
@@ -16,7 +15,7 @@
     --popover: 220 20% 8%;
     --popover-foreground: 40 25% 98%;
  
-    --primary: 35 90% 60%;
+    --primary: 210 100% 50%;
     --primary-foreground: 220 20% 8%;
  
     --secondary: 220 15% 15%;
@@ -25,7 +24,7 @@
     --muted: 220 15% 15%;
     --muted-foreground: 40 20% 80%;
  
-    --accent: 35 90% 60%;
+    --accent: 210 100% 50%;
     --accent-foreground: 220 20% 8%;
  
     --destructive: 0 62.8% 30.6%;
@@ -33,7 +32,7 @@
  
     --border: 220 15% 15%;
     --input: 220 15% 15%;
-    --ring: 35 90% 60%;
+    --ring: 210 100% 50%;
 
     --radius: 0.75rem;
   }
@@ -41,7 +40,7 @@
 
 @layer base {
   * {
-    @apply border-border selection:bg-amber-400/10 selection:text-amber-50;
+    @apply border-border selection:bg-blue-400/10 selection:text-blue-50;
   }
   body {
     @apply bg-background text-foreground antialiased bg-noise;
@@ -75,15 +74,15 @@
 @keyframes glow {
   0%, 100% {
     box-shadow: 
-      0 0 5px theme('colors.amber.500/0.1'),
-      0 0 15px theme('colors.amber.500/0.1'),
-      0 0 25px theme('colors.amber.500/0.05');
+      0 0 5px theme('colors.blue.500/0.1'),
+      0 0 15px theme('colors.blue.500/0.1'),
+      0 0 25px theme('colors.blue.500/0.05');
   }
   50% {
     box-shadow: 
-      0 0 10px theme('colors.amber.500/0.15'),
-      0 0 20px theme('colors.amber.500/0.1'),
-      0 0 30px theme('colors.amber.500/0.05');
+      0 0 10px theme('colors.blue.500/0.15'),
+      0 0 20px theme('colors.blue.500/0.1'),
+      0 0 30px theme('colors.blue.500/0.05');
   }
 }
 
@@ -105,11 +104,11 @@
 /* Colorful text utilities */
 @layer utilities {
   .text-gradient {
-    @apply bg-gradient-to-br from-amber-100 via-amber-200/90 to-amber-300/70 bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-blue-100 via-blue-200/90 to-blue-300/70 bg-clip-text text-transparent;
   }
   
   .text-gradient-warm {
-    @apply bg-gradient-to-br from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 bg-clip-text text-transparent;
   }
   
   .glass-morphism {
@@ -123,7 +122,7 @@
       @apply absolute inset-0 rounded-lg;
       background: radial-gradient(
         800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        theme('colors.amber.500/0.06'),
+        theme('colors.blue.500/0.06'),
         transparent 40%
       );
     }
@@ -136,7 +135,7 @@
       @apply absolute inset-0 rounded-lg;
       background: radial-gradient(
         1200px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        theme('colors.amber.500/0.08'),
+        theme('colors.blue.500/0.08'),
         transparent 40%
       );
     }
@@ -147,10 +146,9 @@
 .hover-glow {
   @apply transition-all duration-300;
   &:hover {
-    @apply bg-amber-500/5;
+    @apply bg-blue-500/5;
     box-shadow: 
-      0 0 10px theme('colors.amber.500/0.1'),
-      0 0 20px theme('colors.amber.500/0.05');
+      0 0 10px theme('colors.blue.500/0.1'),
+      0 0 20px theme('colors.blue.500/0.05');
   }
 }
-
