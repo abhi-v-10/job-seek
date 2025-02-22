@@ -1,19 +1,23 @@
 
-import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Eye } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { JobLogo } from "./jobs/JobLogo";
 import { JobTitle } from "./jobs/JobTitle";
 import { JobDetails } from "./jobs/JobDetails";
 import { JobDialogContent } from "./jobs/JobDialogContent";
-import { JobActions } from "./jobs/JobActions";
-import { JobFooter } from "./jobs/JobFooter";
-import { useJobDetails } from "@/hooks/useJobDetails";
-import { useJobChat } from "@/hooks/useJobChat";
 
 interface JobCardProps {
   id: string;
@@ -45,11 +49,76 @@ export function JobCard({
   jobType,
 }: JobCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: jobDetails, isLoading } = useJobDetails(id, isOpen);
-  const { startChat, user } = useJobChat();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleMessageClick = () => {
-    startChat(jobDetails, jobType, position, company, work);
+  const { data: jobDetails, isLoading } = useQuery({
+    queryKey: ['job', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          profiles!jobs_posted_by_fkey (
+            username,
+            full_name,
+            avatar_url,
+            id
+          )
+        `)
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: isOpen,
+  });
+
+  const startChat = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to send messages",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const { data: existingChat, error: chatError } = await supabase
+        .from('messages')
+        .select('id')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${jobDetails?.profiles?.id}),and(sender_id.eq.${jobDetails?.profiles?.id},receiver_id.eq.${user.id})`)
+        .limit(1);
+
+      if (!existingChat?.length) {
+        await supabase
+          .from('messages')
+          .insert({
+            content: jobType === 'corporate' 
+              ? `Interested in ${position} position at ${company}`
+              : `Interested in ${work} work`,
+            sender_id: user.id,
+            receiver_id: jobDetails?.profiles?.id,
+          });
+      }
+
+      toast({
+        title: "Chat started",
+        description: "You can now message the job poster",
+      });
+
+      navigate("/messages");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -75,14 +144,24 @@ export function JobCard({
               />
             </div>
           </div>
-          <JobActions onViewDetails={() => setIsOpen(true)} />
+          <div className="flex gap-2">
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={() => setIsOpen(true)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Details
+            </Button>
+          </div>
         </div>
-        <JobFooter 
-          location={location}
-          salary={salary}
-          postedAt={postedAt}
-          jobType={jobType}
-        />
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center space-x-4">
+            <span>{location}</span>
+            <span>{jobType === 'corporate' ? salary : `${salary} per hour`}</span>
+          </div>
+          <span>{formatDistanceToNow(postedAt, { addSuffix: true })}</span>
+        </div>
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -111,7 +190,7 @@ export function JobCard({
               dailyWorkTime={dailyWorkTime}
               postedAt={postedAt}
               userId={user?.id}
-              onMessageClick={handleMessageClick}
+              onMessageClick={startChat}
             />
           ) : (
             <div className="p-4">
@@ -123,4 +202,3 @@ export function JobCard({
     </>
   );
 }
-

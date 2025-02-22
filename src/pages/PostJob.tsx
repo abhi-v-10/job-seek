@@ -8,8 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { CorporateJobForm } from "@/components/jobs/CorporateJobForm";
 import { DomesticJobForm } from "@/components/jobs/DomesticJobForm";
-import { JobTypeSelector } from "@/components/jobs/JobTypeSelector";
-import { useCorporateFormState, useDomesticFormState } from "@/hooks/useJobFormState";
 
 const PostJob = () => {
   const { user } = useAuth();
@@ -17,9 +15,25 @@ const PostJob = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobType, setJobType] = useState<"corporate" | "domestic" | null>(null);
-  
-  const { corporateFormData, handleCorporateChange } = useCorporateFormState();
-  const { domesticFormData, handleDomesticChange } = useDomesticFormState();
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [corporateFormData, setCorporateFormData] = useState({
+    company: "",
+    position: "",
+    location: "",
+    salary: "",
+    type: "Full Time",
+    experience: "",
+  });
+  const [domesticFormData, setDomesticFormData] = useState({
+    work: "",
+    dailyWorkTime: "",
+    location: "",
+    hourlyWage: "",
+  });
+
+  const handleImageUpload = (file: File) => {
+    setSelectedImage(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +48,26 @@ const PostJob = () => {
     }
 
     setIsSubmitting(true);
-
     try {
+      let logoUrl = null;
+      
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split('.').pop();
+        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('job-images')
+          .upload(filePath, selectedImage);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('job-images')
+          .getPublicUrl(filePath);
+          
+        logoUrl = publicUrl;
+      }
+
       const jobData = jobType === "corporate"
         ? {
             company: corporateFormData.company,
@@ -44,8 +76,8 @@ const PostJob = () => {
             salary: corporateFormData.salary,
             type: corporateFormData.type,
             level: corporateFormData.experience,
-            job_type: "corporate",
-            posted_by: user.id
+            logo: logoUrl,
+            job_type: "corporate"
           }
         : {
             work: domesticFormData.work,
@@ -53,20 +85,16 @@ const PostJob = () => {
             location: domesticFormData.location,
             hourly_wage: domesticFormData.hourlyWage,
             salary: domesticFormData.hourlyWage + " per hour",
-            job_type: "domestic",
-            posted_by: user.id
+            logo: logoUrl,
+            job_type: "domestic"
           };
 
-      const { error: insertError } = await supabase
-        .from("jobs")
-        .insert(jobData)
-        .select()
-        .single();
+      const { error } = await supabase.from("jobs").insert({
+        ...jobData,
+        posted_by: user.id,
+      });
 
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        throw insertError;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success!",
@@ -74,7 +102,6 @@ const PostJob = () => {
       });
       navigate("/");
     } catch (error: any) {
-      console.error('Job posting error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -83,6 +110,15 @@ const PostJob = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCorporateChange = (name: string, value: string) => {
+    setCorporateFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDomesticChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDomesticFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   if (!user) {
@@ -108,7 +144,27 @@ const PostJob = () => {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="max-w-2xl">
           {!jobType ? (
-            <JobTypeSelector onSelect={setJobType} />
+            <div>
+              <h1 className="text-3xl font-bold">Post a Job</h1>
+              <p className="text-muted-foreground mt-2">
+                Which type of job do you want to post?
+              </p>
+              <div className="mt-8 space-y-4">
+                <Button
+                  className="w-full"
+                  onClick={() => setJobType("corporate")}
+                >
+                  Corporate Job
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setJobType("domestic")}
+                >
+                  Domestic Job
+                </Button>
+              </div>
+            </div>
           ) : jobType === "corporate" ? (
             <CorporateJobForm
               formData={corporateFormData}
@@ -116,6 +172,7 @@ const PostJob = () => {
               onSubmit={handleSubmit}
               onBack={() => setJobType(null)}
               isSubmitting={isSubmitting}
+              onImageUpload={handleImageUpload}
             />
           ) : (
             <DomesticJobForm
@@ -124,6 +181,7 @@ const PostJob = () => {
               onSubmit={handleSubmit}
               onBack={() => setJobType(null)}
               isSubmitting={isSubmitting}
+              onImageUpload={handleImageUpload}
             />
           )}
         </div>
@@ -133,4 +191,3 @@ const PostJob = () => {
 };
 
 export default PostJob;
-
