@@ -1,16 +1,19 @@
 
-import { startTransition, useEffect } from "react";
+import { startTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 
 export default function ProfileSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -34,8 +37,8 @@ export default function ProfileSettings() {
 
     const formData = new FormData(e.currentTarget);
     const updates = {
-      full_name: formData.get('fullName'),
-      mobile_number: formData.get('mobileNumber'),
+      full_name: formData.get('fullName')?.toString() || '',
+      mobile_number: formData.get('mobileNumber')?.toString() || '',
     };
 
     try {
@@ -70,7 +73,17 @@ export default function ProfileSettings() {
 
   return (
     <div className="container max-w-2xl py-8 space-y-8">
-      <h1 className="text-2xl font-bold">Profile Settings</h1>
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => navigate('/')}
+          className="h-8 w-8"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-2xl font-bold">Profile Settings</h1>
+      </div>
       
       <form onSubmit={updateProfile} className="space-y-4">
         <div className="space-y-2">
