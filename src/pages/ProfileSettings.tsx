@@ -1,5 +1,5 @@
 
-import { startTransition } from "react";
+import { startTransition, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,11 +9,69 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 
+function ProfileForm({ profile, onSubmit }: { 
+  profile: any; 
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void 
+}) {
+  const { user } = useAuth();
+  
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="fullName" className="text-sm font-medium">
+          Full Name
+        </label>
+        <Input
+          id="fullName"
+          name="fullName"
+          defaultValue={profile?.full_name || ''}
+          placeholder="Enter your full name"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="email" className="text-sm font-medium">
+          Email
+        </label>
+        <Input
+          id="email"
+          type="email"
+          value={user?.email || ''}
+          disabled
+          className="bg-gray-100"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="mobileNumber" className="text-sm font-medium">
+          Mobile Number
+        </label>
+        <Input
+          id="mobileNumber"
+          name="mobileNumber"
+          defaultValue={profile?.mobile_number || ''}
+          placeholder="Enter your mobile number"
+        />
+      </div>
+
+      <Button type="submit">
+        Update Profile
+      </Button>
+    </form>
+  );
+}
+
 export default function ProfileSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const handleBack = () => {
+    startTransition(() => {
+      navigate('/');
+    });
+  };
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -49,7 +107,6 @@ export default function ProfileSettings() {
 
       if (error) throw error;
 
-      // Invalidate and refetch profile data
       startTransition(() => {
         queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
       });
@@ -77,7 +134,7 @@ export default function ProfileSettings() {
         <Button 
           variant="outline" 
           size="icon"
-          onClick={() => navigate('/')}
+          onClick={handleBack}
           className="h-8 w-8"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -85,48 +142,9 @@ export default function ProfileSettings() {
         <h1 className="text-2xl font-bold">Profile Settings</h1>
       </div>
       
-      <form onSubmit={updateProfile} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="fullName" className="text-sm font-medium">
-            Full Name
-          </label>
-          <Input
-            id="fullName"
-            name="fullName"
-            defaultValue={profile?.full_name || ''}
-            placeholder="Enter your full name"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <Input
-            id="email"
-            type="email"
-            value={user?.email || ''}
-            disabled
-            className="bg-gray-100"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="mobileNumber" className="text-sm font-medium">
-            Mobile Number
-          </label>
-          <Input
-            id="mobileNumber"
-            name="mobileNumber"
-            defaultValue={profile?.mobile_number || ''}
-            placeholder="Enter your mobile number"
-          />
-        </div>
-
-        <Button type="submit">
-          Update Profile
-        </Button>
-      </form>
+      <Suspense fallback={<div>Loading profile form...</div>}>
+        <ProfileForm profile={profile} onSubmit={updateProfile} />
+      </Suspense>
     </div>
   );
 }
