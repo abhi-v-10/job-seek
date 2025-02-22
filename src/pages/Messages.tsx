@@ -29,15 +29,13 @@ export default function Messages() {
         .from("messages")
         .select(`
           sender_id,
-          receiver_id,
-          job_id,
-          jobs:jobs(position, company, work)
+          receiver_id
         `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
       if (error) throw error;
 
-      // Get unique contacts with their associated job details
+      // Get unique contacts
       const uniqueContacts = new Map<string, Contact>();
       
       for (const message of messages) {
@@ -53,11 +51,7 @@ export default function Messages() {
           if (profile) {
             uniqueContacts.set(contactId, {
               id: profile.id,
-              full_name: profile.full_name,
-              job_id: message.job_id,
-              job_title: message.jobs?.position || message.jobs?.work,
-              company: message.jobs?.company,
-              work: message.jobs?.work
+              full_name: profile.full_name
             });
           }
         }
@@ -126,8 +120,7 @@ export default function Messages() {
       const { error } = await supabase.from("messages").insert({
         content: messageInput,
         sender_id: user.id,
-        receiver_id: selectedContact.id,
-        job_id: selectedContact.job_id
+        receiver_id: selectedContact.id
       });
 
       if (error) throw error;
