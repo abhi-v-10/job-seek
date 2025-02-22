@@ -1,36 +1,55 @@
 
-import { useState } from "react";
+import { startTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function ProfileSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState({
-    fullName: "",
-    email: user?.email || "",
-    mobileNumber: "",
+  const queryClient = useQueryClient();
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
-  const updateProfile = async (e: React.FormEvent) => {
+  const updateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) return;
 
+    const formData = new FormData(e.currentTarget);
+    const updates = {
+      full_name: formData.get('fullName'),
+      mobile_number: formData.get('mobileNumber'),
+    };
+
     try {
-      setLoading(true);
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: profile.fullName,
-          mobile_number: profile.mobileNumber,
-        })
+        .update(updates)
         .eq("id", user.id);
 
       if (error) throw error;
+
+      // Invalidate and refetch profile data
+      startTransition(() => {
+        queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
+      });
 
       toast({
         title: "Profile updated",
@@ -42,10 +61,12 @@ export default function ProfileSettings() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <div className="container max-w-2xl py-8">Loading...</div>;
+  }
 
   return (
     <div className="container max-w-2xl py-8 space-y-8">
@@ -58,8 +79,8 @@ export default function ProfileSettings() {
           </label>
           <Input
             id="fullName"
-            value={profile.fullName}
-            onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+            name="fullName"
+            defaultValue={profile?.full_name || ''}
             placeholder="Enter your full name"
           />
         </div>
@@ -71,7 +92,7 @@ export default function ProfileSettings() {
           <Input
             id="email"
             type="email"
-            value={profile.email}
+            value={user?.email || ''}
             disabled
             className="bg-gray-100"
           />
@@ -83,14 +104,14 @@ export default function ProfileSettings() {
           </label>
           <Input
             id="mobileNumber"
-            value={profile.mobileNumber}
-            onChange={(e) => setProfile({ ...profile, mobileNumber: e.target.value })}
+            name="mobileNumber"
+            defaultValue={profile?.mobile_number || ''}
             placeholder="Enter your mobile number"
           />
         </div>
 
-        <Button type="submit" disabled={loading}>
-          {loading ? "Updating..." : "Update Profile"}
+        <Button type="submit">
+          Update Profile
         </Button>
       </form>
     </div>
