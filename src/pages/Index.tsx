@@ -36,6 +36,7 @@ const Index = () => {
               {jobs.map((job) => (
                 <JobCard 
                   key={job.id}
+                  id={job.id}
                   company={job.company}
                   position={job.position}
                   location={job.location}

@@ -6,11 +6,24 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { MessageSquarePlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Messages = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeConversation, setActiveConversation] = useState(null);
+  const { toast } = useToast();
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', user?.id],
@@ -36,6 +49,51 @@ const Messages = () => {
     enabled: !!user,
   });
 
+  const startNewChat = async () => {
+    if (!recipientEmail) return;
+    
+    setIsStartingChat(true);
+    try {
+      // First find the user by email
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('email', recipientEmail)
+        .single();
+
+      if (profileError || !profiles) {
+        throw new Error("User not found");
+      }
+
+      // Create an initial message
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          content: "Started a new conversation",
+          sender_id: user?.id,
+          receiver_id: profiles.id,
+        });
+
+      if (messageError) throw messageError;
+
+      toast({
+        title: "Chat started",
+        description: `Started a new chat with ${profiles.username || recipientEmail}`,
+      });
+
+      setIsNewChatOpen(false);
+      setRecipientEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
@@ -60,7 +118,17 @@ const Messages = () => {
     <div className="min-h-screen bg-background">
       <MainNav />
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold">Messages</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Messages</h1>
+          <Button
+            onClick={() => setIsNewChatOpen(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <MessageSquarePlus className="mr-2 h-4 w-4" />
+            Start a new chat
+          </Button>
+        </div>
+        
         <div className="mt-6">
           {isLoading ? (
             <p>Loading messages...</p>
@@ -91,6 +159,33 @@ const Messages = () => {
             <p>No messages found</p>
           )}
         </div>
+
+        <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Start a new chat</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Input
+                  id="email"
+                  placeholder="Enter recipient's email"
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={startNewChat}
+                disabled={!recipientEmail || isStartingChat}
+              >
+                {isStartingChat ? "Starting chat..." : "Start chat"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
