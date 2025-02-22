@@ -46,27 +46,29 @@ const PostJob = () => {
     try {
       const jobData = jobType === "corporate"
         ? {
-            company: corporateFormData.company,
+            category: "corporate" as const,
+            company_name: corporateFormData.company,
             position: corporateFormData.position,
             location: corporateFormData.location,
-            salary: corporateFormData.salary,
-            type: corporateFormData.type,
-            level: corporateFormData.experience,
-            job_type: "corporate"
+            salary_range_min: parseInt(corporateFormData.salary.split('-')[0].trim().replace(/\$|,/g, '')),
+            salary_range_max: parseInt(corporateFormData.salary.split('-')[1].trim().replace(/\$|,/g, '')),
+            employment_type: corporateFormData.type.toLowerCase(),
+            years_of_experience: corporateFormData.experience,
+            user_id: user.id
           }
         : {
-            work: domesticFormData.work,
-            daily_work_time: parseInt(domesticFormData.dailyWorkTime),
+            category: "domestic" as const,
+            work_type: domesticFormData.work,
+            daily_hours: parseInt(domesticFormData.dailyWorkTime),
             location: domesticFormData.location,
-            hourly_wage: domesticFormData.hourlyWage,
-            salary: domesticFormData.hourlyWage + " per hour",
-            job_type: "domestic"
+            hourly_wage_min: parseInt(domesticFormData.hourlyWage.split('-')[0].trim()),
+            hourly_wage_max: parseInt(domesticFormData.hourlyWage.split('-')[1].trim()),
+            user_id: user.id
           };
 
-      const { error } = await supabase.from("jobs").insert({
-        ...jobData,
-        posted_by: user.id,
-      });
+      const { error } = await supabase
+        .from("jobs")
+        .insert(jobData);
 
       if (error) throw error;
 

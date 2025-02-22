@@ -31,7 +31,7 @@ interface JobCardProps {
   logo?: string;
   work?: string;
   dailyWorkTime?: number;
-  jobType: string;
+  category: "corporate" | "domestic";
 }
 
 export function JobCard({
@@ -46,7 +46,7 @@ export function JobCard({
   logo,
   work,
   dailyWorkTime,
-  jobType,
+  category,
 }: JobCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
@@ -60,7 +60,7 @@ export function JobCard({
         .from('jobs')
         .select(`
           *,
-          profiles!jobs_posted_by_fkey (
+          profiles!jobs_user_id_fkey (
             username,
             full_name,
             avatar_url,
@@ -98,11 +98,12 @@ export function JobCard({
         await supabase
           .from('messages')
           .insert({
-            content: jobType === 'corporate' 
+            content: category === 'corporate' 
               ? `Interested in ${position} position at ${company}`
               : `Interested in ${work} work`,
             sender_id: user.id,
             receiver_id: jobDetails?.profiles?.id,
+            job_id: id
           });
       }
 
@@ -123,20 +124,20 @@ export function JobCard({
 
   return (
     <>
-      <div className={`job-card animate-in ${jobType === 'corporate' ? '!bg-[#2C7A7B]' : '!bg-[#123524]'}`}>
+      <div className={`job-card animate-in ${category === 'corporate' ? '!bg-[#2C7A7B]' : '!bg-[#123524]'}`}>
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-4">
-            <JobLogo logo={logo} company={company} work={work} jobType={jobType} />
+            <JobLogo logo={logo} company={company} work={work} category={category} />
             <div>
               <JobTitle
-                jobType={jobType}
+                category={category}
                 position={position}
                 company={company}
                 work={work}
                 dailyWorkTime={dailyWorkTime}
               />
               <JobDetails
-                jobType={jobType}
+                category={category}
                 type={type}
                 level={level}
                 work={work}
@@ -158,7 +159,7 @@ export function JobCard({
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center space-x-4">
             <span>{location}</span>
-            <span>{jobType === 'corporate' ? salary : `${salary} per hour`}</span>
+            <span>{salary}</span>
           </div>
           <span>{formatDistanceToNow(postedAt, { addSuffix: true })}</span>
         </div>
@@ -168,7 +169,7 @@ export function JobCard({
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
             <DialogTitle className="text-xl">
-              {jobType === 'corporate' ? position : work}
+              {category === 'corporate' ? position : work}
             </DialogTitle>
           </DialogHeader>
           
@@ -179,7 +180,7 @@ export function JobCard({
           ) : jobDetails ? (
             <JobDialogContent
               jobDetails={jobDetails}
-              jobType={jobType}
+              category={category}
               company={company}
               position={position}
               work={work}

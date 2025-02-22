@@ -39,74 +39,77 @@ const Index = () => {
   const sampleJobs = [
     {
       id: 'sample-1',
-      company: 'TechCorp Solutions',
-      position: 'Senior Frontend Developer',
+      company_name: 'TechCorp Solutions',
+      position: 'software_developer',
       location: 'San Francisco, CA',
-      salary: '$120,000 - $180,000',
-      type: 'Full-time',
-      level: 'Senior',
-      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-      job_type: 'corporate'
+      salary_range_min: 120000,
+      salary_range_max: 180000,
+      employment_type: 'full_time',
+      category: 'corporate' as const,
+      created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      years_of_experience: 'Senior'
     },
     {
       id: 'sample-2',
-      company: 'Innovation Labs',
-      position: 'Product Manager',
+      company_name: 'Innovation Labs',
+      position: 'product_manager',
       location: 'New York, NY',
-      salary: '$130,000 - $170,000',
-      type: 'Full-time',
-      level: 'Mid-Level',
-      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-      job_type: 'corporate'
+      salary_range_min: 130000,
+      salary_range_max: 170000,
+      employment_type: 'full_time',
+      category: 'corporate' as const,
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      years_of_experience: 'Mid-Level'
     },
     {
       id: 'sample-3',
-      company: 'Cloud Systems Inc',
-      position: 'DevOps Engineer',
+      company_name: 'Cloud Systems Inc',
+      position: 'devops_engineer',
       location: 'Austin, TX',
-      salary: '$110,000 - $160,000',
-      type: 'Full-time',
-      level: 'Mid-Level',
-      created_at: new Date().toISOString(), // Today
-      job_type: 'corporate'
+      salary_range_min: 110000,
+      salary_range_max: 160000,
+      employment_type: 'full_time',
+      category: 'corporate' as const,
+      created_at: new Date().toISOString(),
+      years_of_experience: 'Mid-Level'
     }
   ];
 
-  // Get unique values for filter options based on job type
-  const locations = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => {
+  // Get unique values for filter options based on category
+  const locations = Array.from(new Set(jobs?.filter(job => job.category === 'corporate').map(job => {
     const location = job.location.split(',')[0].trim();
     return location.charAt(0).toUpperCase() + location.slice(1).toLowerCase();
   }) || []));
 
-  const companies = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => job.company) || []));
-  const positions = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => job.position) || []));
-  const works = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.work) || []));
-  const dailyWorkTimes = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.daily_work_time.toString()) || []));
+  const companies = Array.from(new Set(jobs?.filter(job => job.category === 'corporate').map(job => job.company_name) || []));
+  const positions = Array.from(new Set(jobs?.filter(job => job.category === 'corporate').map(job => job.position) || []));
+  const works = Array.from(new Set(jobs?.filter(job => job.category === 'domestic').map(job => job.work_type) || []));
+  const dailyWorkTimes = Array.from(new Set(jobs?.filter(job => job.category === 'domestic').map(job => job.daily_hours?.toString()) || []));
 
   // Filter jobs based on selected criteria
   const filteredJobs = jobs?.filter(job => {
     // First filter by job type
-    if (selectedJobType && job.job_type !== selectedJobType.toLowerCase()) return false;
+    if (selectedJobType && job.category !== selectedJobType.toLowerCase()) return false;
 
-    if (job.job_type === 'corporate') {
+    if (job.category === 'corporate') {
       const matchesLocation = !selectedLocation || 
         normalizeString(job.location).includes(normalizeString(selectedLocation));
       const matchesCompany = !selectedCompany || 
-        normalizeString(job.company || '').includes(normalizeString(selectedCompany));
+        normalizeString(job.company_name || '').includes(normalizeString(selectedCompany));
       const matchesPosition = !selectedPosition || 
         normalizeString(job.position || '').includes(normalizeString(selectedPosition));
       const matchesType = !selectedType || 
-        normalizeString(job.type || '').includes(normalizeString(selectedType));
+        normalizeString(job.employment_type || '').includes(normalizeString(selectedType));
       
       return matchesLocation && matchesCompany && matchesPosition && matchesType;
     } else {
       // Domestic job filters
       const matchesWork = !selectedWork || 
-        normalizeString(job.work || '').includes(normalizeString(selectedWork));
+        normalizeString(job.work_type || '').includes(normalizeString(selectedWork));
       const matchesHourlyWage = !selectedHourlyWageRange || 
-        isInHourlyWageRange(job.hourly_wage || '', selectedHourlyWageRange);
+        isInHourlyWageRange(job.hourly_wage_min?.toString() || '', selectedHourlyWageRange);
       const matchesDailyWorkTime = !selectedDailyWorkTime || 
-        job.daily_work_time === parseInt(selectedDailyWorkTime);
+        job.daily_hours === parseInt(selectedDailyWorkTime);
       
       return matchesWork && matchesHourlyWage && matchesDailyWorkTime;
     }
@@ -200,25 +203,23 @@ const Index = () => {
             />
           )}
 
-          {/* Display sample jobs first */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sampleJobs.map((job) => (
               <JobCard
                 key={job.id}
                 id={job.id}
-                company={job.company}
+                company={job.company_name}
                 position={job.position}
                 location={job.location}
-                salary={job.salary}
-                type={job.type}
-                level={job.level}
+                salary={`$${job.salary_range_min.toLocaleString()} - $${job.salary_range_max.toLocaleString()}`}
+                type={job.employment_type}
+                level={job.years_of_experience}
                 postedAt={new Date(job.created_at)}
-                jobType={job.job_type}
+                category={job.category}
               />
             ))}
           </div>
 
-          {/* Display fetched jobs */}
           {isLoading ? (
             <p>Loading jobs...</p>
           ) : filteredJobs && filteredJobs.length > 0 ? (
@@ -227,16 +228,19 @@ const Index = () => {
                 <JobCard 
                   key={job.id}
                   id={job.id}
-                  company={job.company}
+                  company={job.company_name}
                   position={job.position}
                   location={job.location}
-                  salary={job.salary}
-                  type={job.type}
-                  level={job.level}
+                  salary={job.category === 'corporate' 
+                    ? `$${job.salary_range_min?.toLocaleString()} - $${job.salary_range_max?.toLocaleString()}`
+                    : `$${job.hourly_wage_min} - $${job.hourly_wage_max}/hr`
+                  }
+                  type={job.employment_type}
+                  level={job.years_of_experience}
                   postedAt={new Date(job.created_at)}
-                  work={job.work}
-                  dailyWorkTime={job.daily_work_time}
-                  jobType={job.job_type}
+                  work={job.work_type}
+                  dailyWorkTime={job.daily_hours}
+                  category={job.category}
                 />
               ))}
             </div>
@@ -251,4 +255,3 @@ const Index = () => {
 }
 
 export default Index;
-
