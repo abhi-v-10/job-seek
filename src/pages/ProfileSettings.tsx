@@ -1,5 +1,4 @@
-
-import { startTransition, Suspense } from "react";
+import { startTransition, Suspense, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -7,8 +6,126 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Plus, X } from "lucide-react";
 import { PhoneInput } from "@/components/PhoneInput";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type Skill = {
+  id: string;
+  name: string;
+  category: 'technical' | 'soft' | 'language' | 'other';
+};
+
+function SkillsSection({ userId, existingSkills, onSkillsChange }: { 
+  userId: string;
+  existingSkills: Skill[];
+  onSkillsChange: () => void;
+}) {
+  const { toast } = useToast();
+  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillCategory, setNewSkillCategory] = useState<Skill['category']>('technical');
+
+  const addSkill = async () => {
+    if (!newSkillName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('skills')
+        .insert({
+          name: newSkillName.trim(),
+          category: newSkillCategory,
+          user_id: userId
+        });
+
+      if (error) throw error;
+
+      setNewSkillName('');
+      onSkillsChange();
+      
+      toast({
+        title: "Skill added",
+        description: "Your skill has been added successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error adding skill",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeSkill = async (skillId: string) => {
+    try {
+      const { error } = await supabase
+        .from('skills')
+        .delete()
+        .eq('id', skillId);
+
+      if (error) throw error;
+
+      onSkillsChange();
+      
+      toast({
+        title: "Skill removed",
+        description: "Your skill has been removed successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error removing skill",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Skills</h2>
+      
+      <div className="flex gap-2">
+        <Input
+          placeholder="Add a new skill"
+          value={newSkillName}
+          onChange={(e) => setNewSkillName(e.target.value)}
+          className="flex-1"
+        />
+        <Select value={newSkillCategory} onValueChange={(value: Skill['category']) => setNewSkillCategory(value)}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="technical">Technical</SelectItem>
+            <SelectItem value="soft">Soft Skills</SelectItem>
+            <SelectItem value="language">Language</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={addSkill} type="button">
+          <Plus className="h-4 w-4" />
+          Add
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {existingSkills.map((skill) => (
+          <div
+            key={skill.id}
+            className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm"
+          >
+            <span>{skill.name}</span>
+            <button
+              onClick={() => removeSkill(skill.id)}
+              className="ml-1 rounded-full p-1 hover:bg-secondary-foreground/10"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ProfileForm({ profile, onSubmit }: { 
   profile: any; 
@@ -69,6 +186,7 @@ export default function ProfileSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [skills, setSkills] = useState<Skill[]>([]);
 
   const handleBack = () => {
     startTransition(() => {
@@ -91,6 +209,30 @@ export default function ProfileSettings() {
     },
     enabled: !!user?.id,
   });
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('skills')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) {
+        toast({
+          title: "Error fetching skills",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSkills(data || []);
+    };
+
+    fetchSkills();
+  }, [user?.id, toast]);
 
   const updateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -160,6 +302,25 @@ export default function ProfileSettings() {
       
       <Suspense fallback={<div>Loading profile form...</div>}>
         <ProfileForm profile={profile} onSubmit={updateProfile} />
+      </Suspense>
+
+      <Suspense fallback={<div>Loading skills section...</div>}>
+        <SkillsSection 
+          userId={user?.id || ''} 
+          existingSkills={skills}
+          onSkillsChange={() => {
+            if (user?.id) {
+              const fetchSkills = async () => {
+                const { data } = await supabase
+                  .from('skills')
+                  .select('*')
+                  .eq('user_id', user.id);
+                setSkills(data || []);
+              };
+              fetchSkills();
+            }
+          }}
+        />
       </Suspense>
     </div>
   );
