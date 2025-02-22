@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ChatBot from "@/components/ChatBot";
 
 import Index from "./pages/Index";
 import Messages from "./pages/Messages";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <ChatBot />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
