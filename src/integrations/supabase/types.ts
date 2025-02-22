@@ -9,6 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      jobs: {
+        Row: {
+          category: Database["public"]["Enums"]["job_category"]
+          company_name: string | null
+          created_at: string | null
+          daily_hours: number | null
+          employment_type: Database["public"]["Enums"]["employment_type"] | null
+          hourly_wage_max: number | null
+          hourly_wage_min: number | null
+          id: string
+          location: string
+          position: Database["public"]["Enums"]["corporate_position"] | null
+          salary_range_max: number | null
+          salary_range_min: number | null
+          updated_at: string | null
+          user_id: string
+          work_type: Database["public"]["Enums"]["domestic_work_type"] | null
+          years_of_experience: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["job_category"]
+          company_name?: string | null
+          created_at?: string | null
+          daily_hours?: number | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type"]
+            | null
+          hourly_wage_max?: number | null
+          hourly_wage_min?: number | null
+          id?: string
+          location: string
+          position?: Database["public"]["Enums"]["corporate_position"] | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          updated_at?: string | null
+          user_id: string
+          work_type?: Database["public"]["Enums"]["domestic_work_type"] | null
+          years_of_experience?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["job_category"]
+          company_name?: string | null
+          created_at?: string | null
+          daily_hours?: number | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type"]
+            | null
+          hourly_wage_max?: number | null
+          hourly_wage_min?: number | null
+          id?: string
+          location?: string
+          position?: Database["public"]["Enums"]["corporate_position"] | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          updated_at?: string | null
+          user_id?: string
+          work_type?: Database["public"]["Enums"]["domestic_work_type"] | null
+          years_of_experience?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -131,6 +200,30 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      corporate_position:
+        | "software_developer"
+        | "software_designer"
+        | "frontend_developer"
+        | "backend_developer"
+        | "full_stack_developer"
+        | "ui_ux_designer"
+        | "project_manager"
+        | "product_manager"
+        | "qa_engineer"
+        | "devops_engineer"
+        | "data_scientist"
+        | "system_architect"
+      domestic_work_type:
+        | "gardening"
+        | "housekeeping"
+        | "cooking"
+        | "childcare"
+        | "elderly_care"
+        | "driving"
+        | "pet_care"
+        | "home_maintenance"
+      employment_type: "full_time" | "part_time"
+      job_category: "corporate" | "domestic"
       skill_category: "technical" | "soft" | "language" | "other"
     }
     CompositeTypes: {
