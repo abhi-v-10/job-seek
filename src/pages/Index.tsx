@@ -97,7 +97,6 @@ const Index = () => {
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <SelectLabel>Location</SelectLabel>
                       <Select
                         value={selectedLocation || ""}
                         onValueChange={setSelectedLocation}
@@ -107,6 +106,7 @@ const Index = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
+                            <SelectLabel>Location</SelectLabel>
                             {locations.map((location) => (
                               <SelectItem key={location} value={location}>
                                 {location}
@@ -117,7 +117,6 @@ const Index = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <SelectLabel>Company</SelectLabel>
                       <Select
                         value={selectedCompany || ""}
                         onValueChange={setSelectedCompany}
@@ -127,6 +126,7 @@ const Index = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
+                            <SelectLabel>Company</SelectLabel>
                             {companies.map((company) => (
                               <SelectItem key={company} value={company}>
                                 {company}
