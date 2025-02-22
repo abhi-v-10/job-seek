@@ -39,6 +39,9 @@ export function DomesticFilters({
   works,
   dailyWorkTimes,
 }: DomesticFiltersProps) {
+  // Generate an array of numbers from 1 to 24 for daily work hours
+  const workHours = Array.from({ length: 24 }, (_, i) => (i + 1).toString());
+
   return (
     <>
       <div className="space-y-2">
@@ -82,8 +85,8 @@ export function DomesticFilters({
 
       <div className="space-y-2">
         <Select
-          value={selectedDailyWorkTime?.toString() || ""}
-          onValueChange={(value) => setSelectedDailyWorkTime(value)}
+          value={selectedDailyWorkTime || ""}
+          onValueChange={setSelectedDailyWorkTime}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select daily work hours" />
@@ -91,9 +94,9 @@ export function DomesticFilters({
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Daily Work Hours</SelectLabel>
-              {dailyWorkTimes.map((time) => (
-                <SelectItem key={time} value={time.toString()}>
-                  {time} hours
+              {workHours.map((hours) => (
+                <SelectItem key={hours} value={hours}>
+                  {hours} hours
                 </SelectItem>
               ))}
             </SelectGroup>

@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MainNav } from "@/components/MainNav";
 import { JobCard } from "@/components/JobCard";
@@ -43,7 +42,7 @@ const Index = () => {
   const companies = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => job.company) || []));
   const positions = Array.from(new Set(jobs?.filter(job => job.job_type === 'corporate').map(job => job.position) || []));
   const works = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.work) || []));
-  const dailyWorkTimes = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.daily_work_time) || []));
+  const dailyWorkTimes = Array.from(new Set(jobs?.filter(job => job.job_type === 'domestic').map(job => job.daily_work_time.toString()) || []));
 
   // Filter jobs based on selected criteria
   const filteredJobs = jobs?.filter(job => {
