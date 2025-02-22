@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback, startTransition, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,12 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 
 type Message = {
@@ -146,21 +139,14 @@ export default function Messages() {
           <h2 className="text-lg font-semibold mb-4">Contacts</h2>
           <div className="space-y-2">
             {contacts.map((contact) => (
-              <DropdownMenu key={contact.id}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant={selectedContact?.id === contact.id ? "default" : "outline"}
-                    className="w-full justify-start"
-                  >
-                    {contact.full_name || "Unknown"}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleContactSelect(contact)}>
-                    Message
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                key={contact.id}
+                variant={selectedContact?.id === contact.id ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => handleContactSelect(contact)}
+              >
+                {contact.full_name || "Unknown"}
+              </Button>
             ))}
           </div>
         </div>
