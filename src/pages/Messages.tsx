@@ -18,21 +18,23 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Define basic profile type without recursive relationships
-type Profile = {
-  id: string;
-  username: string | null;
-};
-
-// Define message type with explicit profile types
+// Define message type without recursive relationships
 type Message = {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: Profile | null;
-  receiver: Profile | null;
+  sender: {
+    id: string;
+    username: string | null;
+    full_name: string | null;
+  } | null;
+  receiver: {
+    id: string;
+    username: string | null;
+    full_name: string | null;
+  } | null;
 };
 
 const Messages = () => {
@@ -56,14 +58,14 @@ const Messages = () => {
           created_at,
           sender_id,
           receiver_id,
-          sender:profiles!messages_sender_id_fkey(id, username),
-          receiver:profiles!messages_receiver_id_fkey(id, username)
+          sender:profiles!messages_sender_id_fkey(id, username, full_name),
+          receiver:profiles!messages_receiver_id_fkey(id, username, full_name)
         `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Message[];
+      return data;
     },
     enabled: !!user,
   });
@@ -75,7 +77,7 @@ const Messages = () => {
     try {
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username')
+        .select('id, username, full_name')
         .eq('email', recipientEmail)
         .single();
 
@@ -95,7 +97,7 @@ const Messages = () => {
 
       toast({
         title: "Chat started",
-        description: `Started a new chat with ${profiles.username || recipientEmail}`,
+        description: `Started a new chat with ${profiles.full_name || profiles.username || recipientEmail}`,
       });
 
       setIsNewChatOpen(false);
@@ -160,8 +162,8 @@ const Messages = () => {
                     <div>
                       <p className="font-medium">
                         {message.sender_id === user.id ? 
-                          `To: ${message.receiver?.username}` : 
-                          `From: ${message.sender?.username}`}
+                          `To: ${message.receiver?.full_name || message.receiver?.username || "Unknown"}` : 
+                          `From: ${message.sender?.full_name || message.sender?.username || "Unknown"}`}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(message.created_at).toLocaleString()}
