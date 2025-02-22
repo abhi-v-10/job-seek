@@ -18,14 +18,14 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Define basic profile interface
-interface Profile {
+// Define basic profile type without recursive relationships
+type Profile = {
   id: string;
   username: string | null;
-}
+};
 
-// Define message interface with explicit profile relationships
-interface MessageWithProfiles {
+// Define message type with explicit profile types
+type Message = {
   id: string;
   content: string;
   created_at: string;
@@ -33,7 +33,7 @@ interface MessageWithProfiles {
   receiver_id: string;
   sender: Profile | null;
   receiver: Profile | null;
-}
+};
 
 const Messages = () => {
   const { user } = useAuth();
@@ -43,7 +43,7 @@ const Messages = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const { data: messages, isLoading } = useQuery<MessageWithProfiles[]>({
+  const { data: messages, isLoading } = useQuery<Message[]>({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -63,7 +63,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as MessageWithProfiles[];
+      return data as Message[];
     },
     enabled: !!user,
   });
@@ -212,4 +212,3 @@ const Messages = () => {
 }
 
 export default Messages;
-
