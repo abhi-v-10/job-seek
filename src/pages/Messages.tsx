@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, startTransition, Suspense } from "react";
 import { MainNav } from "@/components/MainNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +18,7 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Define Profile type separately to avoid recursion
+// Define base types without circular references
 type Profile = {
   id: string;
   username: string | null;
@@ -26,15 +26,41 @@ type Profile = {
   email?: string;
 };
 
-// Define message type without recursive relationships
 type Message = {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: Profile | null;
-  receiver: Profile | null;
+  sender?: Profile;
+  receiver?: Profile;
+};
+
+const MessageList = ({ messages, userId }: { messages: Message[], userId: string }) => {
+  return (
+    <div className="space-y-4">
+      {messages.map((message) => (
+        <div
+          key={message.id}
+          className="p-4 rounded-lg border bg-card"
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="font-medium">
+                {message.sender_id === userId ? 
+                  `To: ${message.receiver?.full_name || message.receiver?.username || "Unknown"}` : 
+                  `From: ${message.sender?.full_name || message.sender?.username || "Unknown"}`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {new Date(message.created_at).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <p className="mt-2">{message.content}</p>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const Messages = () => {
@@ -45,7 +71,7 @@ const Messages = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const { data: messages, isLoading } = useQuery<Message[]>({
+  const { data: messages, isLoading } = useQuery({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -65,7 +91,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user,
   });
@@ -85,30 +111,42 @@ const Messages = () => {
         throw new Error("User not found");
       }
 
-      const { error: messageError } = await supabase
-        .from('messages')
-        .insert({
-          content: "Started a new conversation",
-          sender_id: user?.id,
-          receiver_id: profiles.id,
-        });
+      startTransition(() => {
+        supabase
+          .from('messages')
+          .insert({
+            content: "Started a new conversation",
+            sender_id: user?.id,
+            receiver_id: profiles.id,
+          })
+          .then(({ error: messageError }) => {
+            if (messageError) throw messageError;
 
-      if (messageError) throw messageError;
+            toast({
+              title: "Chat started",
+              description: `Started a new chat with ${profiles.full_name || profiles.username || recipientEmail}`,
+            });
 
-      toast({
-        title: "Chat started",
-        description: `Started a new chat with ${profiles.full_name || profiles.username || recipientEmail}`,
+            setIsNewChatOpen(false);
+            setRecipientEmail("");
+          })
+          .catch((error) => {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive",
+            });
+          })
+          .finally(() => {
+            setIsStartingChat(false);
+          });
       });
-
-      setIsNewChatOpen(false);
-      setRecipientEmail("");
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setIsStartingChat(false);
     }
   };
@@ -149,34 +187,15 @@ const Messages = () => {
         </div>
         
         <div className="mt-6">
-          {isLoading ? (
-            <p>Loading messages...</p>
-          ) : messages && messages.length > 0 ? (
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className="p-4 rounded-lg border bg-card"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">
-                        {message.sender_id === user.id ? 
-                          `To: ${message.receiver?.full_name || message.receiver?.username || "Unknown"}` : 
-                          `From: ${message.sender?.full_name || message.sender?.username || "Unknown"}`}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(message.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-2">{message.content}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No messages found</p>
-          )}
+          <Suspense fallback={<p>Loading messages...</p>}>
+            {isLoading ? (
+              <p>Loading messages...</p>
+            ) : messages && messages.length > 0 ? (
+              <MessageList messages={messages} userId={user.id} />
+            ) : (
+              <p>No messages found</p>
+            )}
+          </Suspense>
         </div>
 
         <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
@@ -214,4 +233,3 @@ const Messages = () => {
 }
 
 export default Messages;
-
