@@ -17,6 +17,22 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Define types for the message data structure
+type Profile = {
+  id: string;
+  username: string;
+};
+
+type Message = {
+  id: string;
+  content: string;
+  created_at: string;
+  sender_id: string;
+  receiver_id: string;
+  sender: Profile;
+  receiver: Profile;
+};
+
 const Messages = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +41,7 @@ const Messages = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const { data: messages, isLoading } = useQuery({
+  const { data: messages, isLoading } = useQuery<Message[]>({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -44,7 +60,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user,
   });
@@ -54,7 +70,6 @@ const Messages = () => {
     
     setIsStartingChat(true);
     try {
-      // First find the user by email
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('id, username')
@@ -65,7 +80,6 @@ const Messages = () => {
         throw new Error("User not found");
       }
 
-      // Create an initial message
       const { error: messageError } = await supabase
         .from('messages')
         .insert({
@@ -192,3 +206,4 @@ const Messages = () => {
 }
 
 export default Messages;
+
