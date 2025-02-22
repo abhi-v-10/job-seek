@@ -42,10 +42,10 @@ export function NavigationLinks() {
           key={item.href}
           to={item.href}
           className={cn(
-            "flex items-center space-x-2 text-sm transition-colors hover:text-white/80",
+            "flex items-center space-x-2 text-sm transition-all hover:text-gradient-warm",
             location.pathname === item.href
-              ? "text-white"
-              : "text-white/60"
+              ? "text-gradient-warm"
+              : "text-muted-foreground"
           )}
         >
           <item.icon size={18} />
