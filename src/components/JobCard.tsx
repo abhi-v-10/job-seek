@@ -18,26 +18,32 @@ import { useToast } from "@/hooks/use-toast";
 
 interface JobCardProps {
   id: string;
-  company: string;
-  position: string;
+  company?: string;
+  position?: string;
   location: string;
   salary: string;
-  type: string;
-  level: string;
+  type?: string;
+  level?: string;
   postedAt: Date;
   logo?: string;
+  work?: string;
+  dailyWorkTime?: number;
+  jobType: string;
 }
 
 export function JobCard({
   id,
-  company = "Unknown Company", // Added default value
-  position = "Untitled Position", // Added default value
-  location = "No location specified", // Added default value
-  salary = "Salary not specified", // Added default value
-  type = "Not specified", // Added default value
-  level = "Not specified", // Added default value
+  company = "Unknown Company",
+  position,
+  location = "No location specified",
+  salary = "Salary not specified",
+  type,
+  level,
   postedAt,
   logo,
+  work,
+  dailyWorkTime,
+  jobType,
 }: JobCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
@@ -59,7 +65,7 @@ export function JobCard({
           )
         `)
         .eq('id', id)
-        .maybeSingle(); // Changed from single() to maybeSingle()
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -89,7 +95,9 @@ export function JobCard({
         await supabase
           .from('messages')
           .insert({
-            content: `Interested in ${position} position at ${company}`,
+            content: jobType === 'corporate' 
+              ? `Interested in ${position} position at ${company}`
+              : `Interested in ${work} work`,
             sender_id: user.id,
             receiver_id: jobDetails?.profiles?.id,
           });
@@ -110,6 +118,26 @@ export function JobCard({
     }
   };
 
+  const renderJobTitle = () => {
+    if (jobType === 'corporate') {
+      return (
+        <>
+          <h3 className="font-semibold text-lg">{position}</h3>
+          <p className="text-sm text-muted-foreground">{company}</p>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <h3 className="font-semibold text-lg">{work || "Domestic Work"}</h3>
+          <p className="text-sm text-muted-foreground">
+            {dailyWorkTime} hours per day
+          </p>
+        </>
+      );
+    }
+  };
+
   return (
     <>
       <div className="job-card animate-in">
@@ -120,16 +148,23 @@ export function JobCard({
                 <img src={logo} alt={company} className="w-8 h-8 rounded-full" />
               ) : (
                 <span className="text-lg font-semibold">
-                  {company && company.length > 0 ? company[0].toUpperCase() : "?"}
+                  {jobType === 'corporate' 
+                    ? (company && company.length > 0 ? company[0].toUpperCase() : "?")
+                    : (work && work.length > 0 ? work[0].toUpperCase() : "?")}
                 </span>
               )}
             </div>
             <div>
-              <h3 className="font-semibold text-lg">{position}</h3>
-              <p className="text-sm text-muted-foreground">{company}</p>
+              {renderJobTitle()}
               <div className="flex flex-wrap gap-2 mt-2">
-                <Badge variant="secondary">{type}</Badge>
-                <Badge variant="secondary">{level}</Badge>
+                {jobType === 'corporate' ? (
+                  <>
+                    <Badge variant="secondary">{type}</Badge>
+                    <Badge variant="secondary">{level}</Badge>
+                  </>
+                ) : (
+                  <Badge variant="secondary">Domestic Work</Badge>
+                )}
               </div>
             </div>
           </div>
@@ -147,7 +182,7 @@ export function JobCard({
         <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center space-x-4">
             <span>{location}</span>
-            <span>{salary}</span>
+            <span>{jobType === 'corporate' ? salary : `${salary} per hour`}</span>
           </div>
           <span>{formatDistanceToNow(postedAt, { addSuffix: true })}</span>
         </div>
@@ -156,7 +191,9 @@ export function JobCard({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle className="text-xl">{position}</DialogTitle>
+            <DialogTitle className="text-xl">
+              {jobType === 'corporate' ? position : work}
+            </DialogTitle>
           </DialogHeader>
           
           {isLoading ? (
@@ -168,20 +205,42 @@ export function JobCard({
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
                   <span className="text-lg font-semibold">
-                    {company && company.length > 0 ? company[0].toUpperCase() : "?"}
+                    {jobType === 'corporate' 
+                      ? (company && company.length > 0 ? company[0].toUpperCase() : "?")
+                      : (work && work.length > 0 ? work[0].toUpperCase() : "?")}
                   </span>
                 </div>
                 <div>
-                  <h4 className="font-semibold">{company}</h4>
-                  <p className="text-sm text-muted-foreground">{location}</p>
+                  {jobType === 'corporate' ? (
+                    <>
+                      <h4 className="font-semibold">{company}</h4>
+                      <p className="text-sm text-muted-foreground">{location}</p>
+                    </>
+                  ) : (
+                    <>
+                      <h4 className="font-semibold">{work}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {dailyWorkTime} hours per day at {location}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
-                  <Badge>{type}</Badge>
-                  <Badge>{level}</Badge>
-                  <Badge variant="secondary">{salary}</Badge>
+                  {jobType === 'corporate' ? (
+                    <>
+                      <Badge>{type}</Badge>
+                      <Badge>{level}</Badge>
+                      <Badge variant="secondary">{salary}</Badge>
+                    </>
+                  ) : (
+                    <>
+                      <Badge>Domestic Work</Badge>
+                      <Badge variant="secondary">{salary} per hour</Badge>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -234,4 +293,3 @@ export function JobCard({
     </>
   );
 }
-

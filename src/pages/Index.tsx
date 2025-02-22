@@ -313,6 +313,9 @@ const Index = () => {
                   type={job.type}
                   level={job.level}
                   postedAt={new Date(job.created_at)}
+                  work={job.work}
+                  dailyWorkTime={job.daily_work_time}
+                  jobType={job.job_type}
                 />
               ))}
             </div>
