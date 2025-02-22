@@ -77,10 +77,8 @@ export default function Messages() {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(
-          `and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.id}),` +
-          `and(sender_id.eq.${selectedContact.id},receiver_id.eq.${user.id})`
-        )
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`sender_id.eq.${selectedContact.id},receiver_id.eq.${selectedContact.id}`)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -101,8 +99,7 @@ export default function Messages() {
           .eq("receiver_id", user.id)
           .eq("sender_id", selectedContact.id);
 
-        // Invalidate queries to update UI
-        queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
+        // Invalidate the unread messages query to update the notification dot
         queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
       } catch (error: any) {
         console.error("Error marking messages as read:", error);
@@ -114,7 +111,7 @@ export default function Messages() {
 
   // Subscribe to new messages
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !selectedContact?.id) return;
 
     const subscription = supabase
       .channel("messages")
@@ -124,17 +121,11 @@ export default function Messages() {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `receiver_id=eq.${user.id}`,
+          filter: `sender_id=eq.${selectedContact.id},receiver_id=eq.${user.id}`,
         },
-        (payload) => {
-          // Update messages if sender is currently selected contact
-          if (selectedContact?.id === payload.new.sender_id) {
-            queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
-          }
-          // Always update unread messages count
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
           queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
-          // Update contacts list as we might have a new contact
-          queryClient.invalidateQueries({ queryKey: ["contacts"] });
         }
       )
       .subscribe();
@@ -142,7 +133,7 @@ export default function Messages() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.id, selectedContact?.id, queryClient]);
+  }, [selectedContact?.id, user?.id, queryClient]);
 
   const handleContactSelect = useCallback((contact: Contact) => {
     startTransition(() => {
@@ -156,7 +147,7 @@ export default function Messages() {
 
     try {
       const { error } = await supabase.from("messages").insert({
-        content: messageInput.trim(),
+        content: messageInput,
         sender_id: user.id,
         receiver_id: selectedContact.id,
         job_id: selectedContact.job_id,
@@ -210,3 +201,4 @@ export default function Messages() {
     </div>
   );
 }
+

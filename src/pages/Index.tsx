@@ -9,7 +9,6 @@ import { X } from "lucide-react";
 import { FilterDialog } from "@/components/jobs/filters/FilterDialog";
 import { ActiveFilters } from "@/components/jobs/ActiveFilters";
 import { normalizeString, isInHourlyWageRange } from "@/utils/job-filters";
-import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const [selectedJobType, setSelectedJobType] = useState<string | null>(null);
@@ -91,9 +90,9 @@ const Index = () => {
     selectedHourlyWageRange || selectedDailyWorkTime;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       <MainNav />
-      <main className="max-w-7xl mx-auto px-6 py-8 flex-1">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -189,9 +188,9 @@ const Index = () => {
           )}
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
 
 export default Index;
+
