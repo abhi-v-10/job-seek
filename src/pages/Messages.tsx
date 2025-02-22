@@ -18,6 +18,14 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Define Profile type separately to avoid recursion
+type Profile = {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  email?: string;
+};
+
 // Define message type without recursive relationships
 type Message = {
   id: string;
@@ -25,16 +33,8 @@ type Message = {
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender: {
-    id: string;
-    username: string | null;
-    full_name: string | null;
-  } | null;
-  receiver: {
-    id: string;
-    username: string | null;
-    full_name: string | null;
-  } | null;
+  sender: Profile | null;
+  receiver: Profile | null;
 };
 
 const Messages = () => {
@@ -214,3 +214,4 @@ const Messages = () => {
 }
 
 export default Messages;
+
