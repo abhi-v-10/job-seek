@@ -82,12 +82,20 @@ const PostJob = () => {
     try {
       const jobData = jobType === "corporate" 
         ? {
-            ...corporateFormData,
-            job_type: "corporate",
+            company: corporateFormData.company,
+            position: corporateFormData.position,
+            location: corporateFormData.location,
+            salary: corporateFormData.salary,
+            type: corporateFormData.type,
+            level: corporateFormData.experience,
+            job_type: "corporate"
           }
         : {
-            ...domesticFormData,
-            job_type: "domestic",
+            work: domesticFormData.work,
+            daily_work_time: parseInt(domesticFormData.dailyWorkTime),
+            location: domesticFormData.location,
+            hourly_wage: domesticFormData.hourlyWage,
+            job_type: "domestic"
           };
 
       const { error } = await supabase.from("jobs").insert({
@@ -342,14 +350,17 @@ const PostJob = () => {
                       htmlFor="dailyWorkTime"
                       className="block text-sm font-medium mb-2"
                     >
-                      Daily Work Time
+                      Daily Work Hours
                     </label>
                     <Input
                       id="dailyWorkTime"
                       name="dailyWorkTime"
+                      type="number"
+                      min="1"
+                      max="23"
                       value={domesticFormData.dailyWorkTime}
                       onChange={handleDomesticChange}
-                      placeholder="e.g. 2hrs a day"
+                      placeholder="e.g. 2"
                       required
                     />
                   </div>
