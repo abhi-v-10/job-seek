@@ -9,24 +9,30 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  isLoading: true,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
+  children 
+}) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
+    const initSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        console.error("Error fetching initial session:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initSession();
 
     // Listen for auth changes
     const {
@@ -41,11 +47,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ session, user, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    session,
+    user,
+    isLoading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
