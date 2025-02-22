@@ -1,20 +1,23 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MainNav } from "@/components/MainNav";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MessageCircle } from "lucide-react";
 
 declare global {
   interface Window {
     botpressWebChat: {
       init: (config: any) => void;
+      sendEvent: (event: any) => void;
+      onEvent: (event: any, handler: any) => void;
     };
   }
 }
 
 const SeekBot = () => {
   const navigate = useNavigate();
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     // Add Botpress script
@@ -27,19 +30,72 @@ const SeekBot = () => {
     script2.async = true;
 
     document.body.appendChild(script1);
-    document.body.appendChild(script2);
+
+    script1.onload = () => {
+      document.body.appendChild(script2);
+
+      script2.onload = () => {
+        // Initialize chat with custom configuration
+        window.botpressWebChat.init({
+          composerPlaceholder: "Chat with SeekBot...",
+          showConversationsButton: false,
+          containerWidth: '100%',
+          layoutWidth: '100%',
+          hideWidget: true,
+          stylesheet: `
+            :root {
+              --main-bg-color: #ffffff;
+              --composer-bg-color: #f3f4f6;
+              --composer-text-color: #374151;
+            }
+            .bpw-layout {
+              width: 100% !important;
+              height: calc(100vh - 150px) !important;
+              border-radius: 0 !important;
+              margin: 0 !important;
+            }
+            .bpw-header-container {
+              padding: 1rem !important;
+              border-top-left-radius: 0 !important;
+              border-top-right-radius: 0 !important;
+            }
+          `
+        });
+
+        // Listen for chat events
+        window.botpressWebChat.onEvent(
+          "LIFECYCLE.LOADED", 
+          () => {
+            window.botpressWebChat.onEvent(
+              "WEBSOCKET.STATE_CHANGED",
+              (event: any) => {
+                setIsChatOpen(event.connected);
+              }
+            );
+          }
+        );
+      };
+    };
 
     // Clean up on unmount
     return () => {
       document.body.removeChild(script1);
-      document.body.removeChild(script2);
+      if (document.body.contains(script2)) {
+        document.body.removeChild(script2);
+      }
       // Remove the webchat container if it exists
-      const webchatContainer = document.getElementById("webchat");
+      const webchatContainer = document.getElementById("bp-web-widget");
       if (webchatContainer) {
         document.body.removeChild(webchatContainer);
       }
     };
   }, []);
+
+  const handleChatToggle = () => {
+    if (!isChatOpen) {
+      window.botpressWebChat.sendEvent({ type: "show" });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,8 +119,20 @@ const SeekBot = () => {
           </p>
         </div>
       </main>
+
+      {/* Chat Icon Button */}
+      {!isChatOpen && (
+        <Button
+          onClick={handleChatToggle}
+          className="fixed bottom-6 right-6 rounded-full w-12 h-12 p-0"
+          variant="default"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 };
 
 export default SeekBot;
+
