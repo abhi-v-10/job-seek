@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback, startTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +19,7 @@ export default function Messages() {
   const [messageInput, setMessageInput] = useState("");
   const queryClient = useQueryClient();
 
-  // Update the contacts query to match the new schema
+  // Fetch contacts (users we've messaged with)
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
@@ -30,12 +31,7 @@ export default function Messages() {
           sender_id,
           receiver_id,
           job_id,
-          jobs (
-            category,
-            position,
-            company_name,
-            work_type
-          )
+          jobs:jobs(position, company, work)
         `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
@@ -59,9 +55,9 @@ export default function Messages() {
               id: profile.id,
               full_name: profile.full_name,
               job_id: message.job_id,
-              job_title: message.jobs?.category === 'corporate' ? message.jobs?.position : message.jobs?.work_type,
-              company: message.jobs?.company_name,
-              work: message.jobs?.work_type
+              job_title: message.jobs?.position || message.jobs?.work,
+              company: message.jobs?.company,
+              work: message.jobs?.work
             });
           }
         }
