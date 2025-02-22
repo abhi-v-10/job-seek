@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { MessageSquare, Bot, Briefcase } from "lucide-react";
+import { Briefcase, MessageSquare, Plus, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -15,7 +15,7 @@ export function NavigationLinks() {
   const navItems: NavItem[] = [
     {
       title: "Jobs",
-      href: "/jobs",
+      href: "/",
       icon: Briefcase
     },
     {
@@ -27,6 +27,11 @@ export function NavigationLinks() {
       title: "SeekBot",
       href: "/seekbot",
       icon: Bot
+    },
+    {
+      title: "Post Job",
+      href: "/post-job",
+      icon: Plus
     }
   ];
 

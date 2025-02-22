@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import Messages from "@/pages/Messages";
-import Jobs from "@/pages/Jobs";
 import PostJob from "@/pages/PostJob";
 import NotFound from "@/pages/NotFound";
 import ProfileSettings from "@/pages/ProfileSettings";
@@ -15,7 +14,6 @@ function App() {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/messages" element={<Messages />} />
-      <Route path="/jobs" element={<Jobs />} />
       <Route path="/post-job" element={<PostJob />} />
       <Route path="/profile-settings" element={<ProfileSettings />} />
       <Route path="/seekbot" element={<SeekBot />} />

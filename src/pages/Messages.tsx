@@ -1,15 +1,31 @@
 
-import { useEffect, useState, useCallback, startTransition } from "react";
+import { useEffect, useState, useCallback, startTransition, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ContactsList } from "@/components/messages/ContactsList";
-import { ChatWindow } from "@/components/messages/ChatWindow";
-import type { Contact, Message } from "@/types/messages";
+
+type Message = {
+  id: string;
+  content: string;
+  sender_id: string;
+  receiver_id: string;
+  created_at: string;
+  job_id: string | null;
+};
+
+type Contact = {
+  id: string;
+  full_name: string | null;
+  job_id?: string | null;
+  job_title?: string | null;
+  company?: string | null;
+  work?: string | null;
+};
 
 export default function Messages() {
   const { user } = useAuth();
@@ -29,13 +45,15 @@ export default function Messages() {
         .from("messages")
         .select(`
           sender_id,
-          receiver_id
+          receiver_id,
+          job_id,
+          jobs:jobs(position, company, work)
         `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
       if (error) throw error;
 
-      // Get unique contacts
+      // Get unique contacts with their associated job details
       const uniqueContacts = new Map<string, Contact>();
       
       for (const message of messages) {
@@ -51,7 +69,11 @@ export default function Messages() {
           if (profile) {
             uniqueContacts.set(contactId, {
               id: profile.id,
-              full_name: profile.full_name
+              full_name: profile.full_name,
+              job_id: message.job_id,
+              job_title: message.jobs?.position || message.jobs?.work,
+              company: message.jobs?.company,
+              work: message.jobs?.work
             });
           }
         }
@@ -120,7 +142,8 @@ export default function Messages() {
       const { error } = await supabase.from("messages").insert({
         content: messageInput,
         sender_id: user.id,
-        receiver_id: selectedContact.id
+        receiver_id: selectedContact.id,
+        job_id: selectedContact.job_id
       });
 
       if (error) throw error;
@@ -153,19 +176,79 @@ export default function Messages() {
       </div>
 
       <div className="flex gap-4 h-[600px]">
-        <ContactsList
-          contacts={contacts}
-          selectedContact={selectedContact}
-          onContactSelect={handleContactSelect}
-        />
-        <ChatWindow
-          contact={selectedContact}
-          messages={messages}
-          currentUserId={user.id}
-          messageInput={messageInput}
-          onMessageInputChange={setMessageInput}
-          onMessageSubmit={handleSendMessage}
-        />
+        <div className="w-1/3 border rounded-lg p-4">
+          <h2 className="text-lg font-semibold mb-4">Conversations</h2>
+          <div className="space-y-2">
+            {contacts.map((contact) => (
+              <Button
+                key={contact.id}
+                variant={selectedContact?.id === contact.id ? "default" : "outline"}
+                className="w-full justify-start flex flex-col items-start"
+                onClick={() => handleContactSelect(contact)}
+              >
+                <span>{contact.full_name || "Unknown"}</span>
+                {contact.job_title && (
+                  <span className="text-xs text-muted-foreground">
+                    {contact.company ? `${contact.job_title} at ${contact.company}` : contact.job_title}
+                  </span>
+                )}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 border rounded-lg p-4">
+          {selectedContact ? (
+            <div className="h-full flex flex-col">
+              <h2 className="text-lg font-semibold mb-4">
+                Chat with {selectedContact.full_name || "Unknown"}
+                {selectedContact.job_title && (
+                  <div className="text-sm text-muted-foreground">
+                    {selectedContact.company 
+                      ? `Regarding: ${selectedContact.job_title} at ${selectedContact.company}`
+                      : `Regarding: ${selectedContact.job_title}`
+                    }
+                  </div>
+                )}
+              </h2>
+              <Suspense fallback={<div>Loading messages...</div>}>
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        message.sender_id === user.id ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`rounded-lg px-4 py-2 max-w-[70%] ${
+                          message.sender_id === user.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Suspense>
+
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Input
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Type your message..."
+                />
+                <Button type="submit">Send</Button>
+              </form>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              Select a conversation to start messaging
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,4 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,163 +8,131 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
-type DomesticWorkType = Database["public"]["Enums"]["domestic_work_type"];
-
-const workTypes: DomesticWorkType[] = [
-  "gardening",
-  "housekeeping",
-  "cooking",
-  "childcare",
-  "elderly_care",
-  "driving",
-  "pet_care",
-  "home_maintenance",
+const HOURLY_WAGE_RANGES = [
+  "₹0 - ₹200",
+  "₹200 - ₹400",
+  "₹400 - ₹600",
+  "₹600 - ₹800",
+  "₹800 - ₹1000",
+  "₹1000+"
 ];
 
-const hourlyWageRanges = [
-  { min: 100, max: 150 },
-  { min: 150, max: 200 },
-  { min: 200, max: 300 },
-  { min: 300, max: 400 },
-  { min: 400, max: 500 },
-  { min: 500, max: 750 },
-];
-
-export function DomesticJobForm() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [formData, setFormData] = useState({
-    workType: "" as DomesticWorkType,
-    location: "",
-    dailyHours: "",
-    hourlyWageRange: "",
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setIsSubmitting(true);
-
-    const [minWage, maxWage] = formData.hourlyWageRange.split("-").map(Number);
-
-    try {
-      const { error } = await supabase.from("jobs").insert({
-        user_id: user.id,
-        category: "domestic" as const,
-        work_type: formData.workType,
-        location: formData.location,
-        daily_hours: parseInt(formData.dailyHours),
-        hourly_wage_min: minWage,
-        hourly_wage_max: maxWage,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Job posted successfully",
-      });
-      
-      navigate("/jobs");
-    } catch (error: any) {
-      console.error("Error posting job:", error);
-      toast({
-        title: "Error",
-        description: "Failed to post job. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+interface DomesticJobFormProps {
+  formData: {
+    work: string;
+    dailyWorkTime: string;
+    location: string;
+    hourlyWage: string;
   };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Type of Work</label>
-          <Select
-            required
-            value={formData.workType}
-            onValueChange={(value: DomesticWorkType) =>
-              setFormData({ ...formData, workType: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select work type" />
-            </SelectTrigger>
-            <SelectContent>
-              {workTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Location</label>
-          <Input
-            required
-            value={formData.location}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
-            placeholder="Enter location"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Daily Hours of Work</label>
-          <Input
-            required
-            type="number"
-            min="1"
-            max="24"
-            value={formData.dailyHours}
-            onChange={(e) =>
-              setFormData({ ...formData, dailyHours: e.target.value })
-            }
-            placeholder="Enter daily hours (1-24)"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Hourly Wage Range (₹)</label>
-          <Select
-            required
-            value={formData.hourlyWageRange}
-            onValueChange={(value) =>
-              setFormData({ ...formData, hourlyWageRange: value })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select hourly wage range" />
-            </SelectTrigger>
-            <SelectContent>
-              {hourlyWageRanges.map((range) => (
-                <SelectItem
-                  key={`${range.min}-${range.max}`}
-                  value={`${range.min}-${range.max}`}
-                >
-                  ₹{range.min} - ₹{range.max} per hour
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Posting..." : "Post Domestic Job"}
-      </Button>
-    </form>
-  );
+  onFormChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onBack: () => void;
+  isSubmitting: boolean;
 }
+
+export const DomesticJobForm = ({
+  formData,
+  onFormChange,
+  onSubmit,
+  onBack,
+  isSubmitting,
+}: DomesticJobFormProps) => {
+  return (
+    <>
+      <h1 className="text-3xl font-bold">Domestic Job</h1>
+      <p className="text-muted-foreground mt-2">
+        Post domestic work opportunities
+      </p>
+
+      <form onSubmit={onSubmit} className="mt-8 space-y-6">
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="work" className="block text-sm font-medium mb-2">
+              Work
+            </label>
+            <Input
+              id="work"
+              name="work"
+              value={formData.work}
+              onChange={onFormChange}
+              placeholder="e.g. Gardening"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="dailyWorkTime"
+              className="block text-sm font-medium mb-2"
+            >
+              Daily Work Hours
+            </label>
+            <Input
+              id="dailyWorkTime"
+              name="dailyWorkTime"
+              type="number"
+              min="1"
+              max="23"
+              value={formData.dailyWorkTime}
+              onChange={onFormChange}
+              placeholder="e.g. 2"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium mb-2">
+              Location
+            </label>
+            <Input
+              id="location"
+              name="location"
+              value={formData.location}
+              onChange={onFormChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="hourlyWage"
+              className="block text-sm font-medium mb-2"
+            >
+              Hourly Wage Range
+            </label>
+            <Select
+              value={formData.hourlyWage}
+              onValueChange={(value) => {
+                const event = {
+                  target: { name: 'hourlyWage', value }
+                } as React.ChangeEvent<HTMLInputElement>;
+                onFormChange(event);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select hourly wage range" />
+              </SelectTrigger>
+              <SelectContent>
+                {HOURLY_WAGE_RANGES.map((range) => (
+                  <SelectItem key={range} value={range}>
+                    {range} per hour
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex space-x-4">
+          <Button type="button" variant="outline" onClick={onBack}>
+            Back
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Posting..." : "Post Job"}
+          </Button>
+        </div>
+      </form>
+    </>
+  );
+};
