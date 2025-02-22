@@ -10,6 +10,8 @@ import { useToast } from "@/components/ui/use-toast";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
@@ -19,18 +21,31 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) throw error;
-
       if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              mobile_number: mobileNumber,
+            },
+          },
+        });
+
+        if (error) throw error;
+
         toast({
           title: "Check your email",
           description: "We sent you a confirmation link.",
         });
       } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
         navigate("/");
       }
     } catch (error: any) {
@@ -73,6 +88,24 @@ const Auth = () => {
 
         <form onSubmit={handleEmailAuth} className="mt-8 space-y-6">
           <div className="space-y-4">
+            {isSignUp && (
+              <>
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required={isSignUp}
+                />
+                <Input
+                  type="tel"
+                  placeholder="Mobile Number"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  required={isSignUp}
+                />
+              </>
+            )}
             <Input
               type="email"
               placeholder="Email address"
