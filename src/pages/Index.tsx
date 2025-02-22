@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { MainNav } from "@/components/MainNav";
 import { JobCard } from "@/components/JobCard";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -41,7 +41,7 @@ const Index = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
@@ -62,7 +62,10 @@ const Index = () => {
 
   // Helper function to check if a salary falls within a range
   const isInSalaryRange = (salary: string, range: string) => {
+    if (!salary) return false;
     const numericSalary = parseInt(salary.replace(/[^0-9]/g, ''));
+    if (isNaN(numericSalary)) return false;
+    
     switch (range) {
       case "0-50k":
         return numericSalary <= 50000;
@@ -134,6 +137,9 @@ const Index = () => {
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Filter Jobs</DialogTitle>
+                    <DialogDescription>
+                      Filter jobs by position, location, company, salary range, and employment type.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
