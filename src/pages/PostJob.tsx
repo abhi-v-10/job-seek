@@ -48,23 +48,27 @@ const PostJob = () => {
     }
 
     setIsSubmitting(true);
+
     try {
       let logoUrl = null;
       
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
-        const filePath = `${crypto.randomUUID()}.${fileExt}`;
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
         
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError, data } = await supabase.storage
           .from('job-images')
-          .upload(filePath, selectedImage);
+          .upload(fileName, selectedImage);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('job-images')
-          .getPublicUrl(filePath);
-          
+          .getPublicUrl(fileName);
+
         logoUrl = publicUrl;
       }
 
@@ -77,7 +81,8 @@ const PostJob = () => {
             type: corporateFormData.type,
             level: corporateFormData.experience,
             logo: logoUrl,
-            job_type: "corporate"
+            job_type: "corporate",
+            posted_by: user.id
           }
         : {
             work: domesticFormData.work,
@@ -86,15 +91,20 @@ const PostJob = () => {
             hourly_wage: domesticFormData.hourlyWage,
             salary: domesticFormData.hourlyWage + " per hour",
             logo: logoUrl,
-            job_type: "domestic"
+            job_type: "domestic",
+            posted_by: user.id
           };
 
-      const { error } = await supabase.from("jobs").insert({
-        ...jobData,
-        posted_by: user.id,
-      });
+      const { error: insertError, data: insertedJob } = await supabase
+        .from("jobs")
+        .insert(jobData)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
 
       toast({
         title: "Success!",
@@ -102,6 +112,7 @@ const PostJob = () => {
       });
       navigate("/");
     } catch (error: any) {
+      console.error('Job posting error:', error);
       toast({
         title: "Error",
         description: error.message,
