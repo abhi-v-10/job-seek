@@ -9,12 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      jobs: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          daily_work_time: number | null
+          hourly_wage: string | null
+          id: string
+          job_type: string
+          level: string | null
+          location: string
+          position: string | null
+          posted_by: string
+          salary: string
+          type: string | null
+          updated_at: string | null
+          work: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          daily_work_time?: number | null
+          hourly_wage?: string | null
+          id?: string
+          job_type?: string
+          level?: string | null
+          location: string
+          position?: string | null
+          posted_by: string
+          salary: string
+          type?: string | null
+          updated_at?: string | null
+          work?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          daily_work_time?: number | null
+          hourly_wage?: string | null
+          id?: string
+          job_type?: string
+          level?: string | null
+          location?: string
+          position?: string | null
+          posted_by?: string
+          salary?: string
+          type?: string | null
+          updated_at?: string | null
+          work?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_posted_by_fkey"
+            columns: ["posted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          receiver_id: string
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           full_name: string | null
           id: string
+          mobile_number: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           username: string | null
@@ -24,6 +126,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          mobile_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           username?: string | null
@@ -33,6 +136,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          mobile_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           username?: string | null
