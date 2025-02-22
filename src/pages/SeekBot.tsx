@@ -64,10 +64,12 @@ const SeekBot = () => {
             () => {
               setIsBotReady(true);
               window.botpressWebChat.onEvent(
-                "WEBSOCKET.STATE_CHANGED",
-                (event: any) => {
-                  setIsChatOpen(event.connected);
-                }
+                "LIFECYCLE.OPEN",
+                () => setIsChatOpen(true)
+              );
+              window.botpressWebChat.onEvent(
+                "LIFECYCLE.CLOSE",
+                () => setIsChatOpen(false)
               );
             }
           );
