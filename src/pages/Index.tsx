@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { MainNav } from "@/components/MainNav";
 import { JobCard } from "@/components/JobCard";
@@ -164,7 +165,7 @@ const Index = () => {
           {isLoading ? (
             <p>Loading jobs...</p>
           ) : filteredJobs && filteredJobs.length > 0 ? (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredJobs.map((job) => (
                 <JobCard 
                   key={job.id}
@@ -192,3 +193,4 @@ const Index = () => {
 }
 
 export default Index;
+
