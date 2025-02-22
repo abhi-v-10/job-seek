@@ -27,6 +27,9 @@ import { SlidersHorizontal, X } from "lucide-react";
 const Index = () => {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
+  const [selectedSalaryRange, setSelectedSalaryRange] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const { data: jobs, isLoading } = useQuery({
@@ -42,23 +45,60 @@ const Index = () => {
     },
   });
 
-  // Get unique locations and companies for filter options
+  // Get unique values for filter options
   const locations = Array.from(new Set(jobs?.map(job => job.location) || []));
   const companies = Array.from(new Set(jobs?.map(job => job.company) || []));
+  const positions = Array.from(new Set(jobs?.map(job => job.position) || []));
+  const types = Array.from(new Set(jobs?.map(job => job.type) || []));
+
+  // Predefined salary ranges
+  const salaryRanges = [
+    "0-50k",
+    "50k-100k",
+    "100k-150k",
+    "150k-200k",
+    "200k+"
+  ];
+
+  // Helper function to check if a salary falls within a range
+  const isInSalaryRange = (salary: string, range: string) => {
+    const numericSalary = parseInt(salary.replace(/[^0-9]/g, ''));
+    switch (range) {
+      case "0-50k":
+        return numericSalary <= 50000;
+      case "50k-100k":
+        return numericSalary > 50000 && numericSalary <= 100000;
+      case "100k-150k":
+        return numericSalary > 100000 && numericSalary <= 150000;
+      case "150k-200k":
+        return numericSalary > 150000 && numericSalary <= 200000;
+      case "200k+":
+        return numericSalary > 200000;
+      default:
+        return true;
+    }
+  };
 
   // Filter jobs based on selected criteria
   const filteredJobs = jobs?.filter(job => {
     const matchesLocation = !selectedLocation || job.location === selectedLocation;
     const matchesCompany = !selectedCompany || job.company === selectedCompany;
-    return matchesLocation && matchesCompany;
+    const matchesPosition = !selectedPosition || job.position === selectedPosition;
+    const matchesSalaryRange = !selectedSalaryRange || isInSalaryRange(job.salary, selectedSalaryRange);
+    const matchesType = !selectedType || job.type === selectedType;
+    
+    return matchesLocation && matchesCompany && matchesPosition && matchesSalaryRange && matchesType;
   });
 
   const clearFilters = () => {
     setSelectedLocation(null);
     setSelectedCompany(null);
+    setSelectedPosition(null);
+    setSelectedSalaryRange(null);
+    setSelectedType(null);
   };
 
-  const hasActiveFilters = selectedLocation || selectedCompany;
+  const hasActiveFilters = selectedLocation || selectedCompany || selectedPosition || selectedSalaryRange || selectedType;
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,11 +131,31 @@ const Index = () => {
                     Filter Jobs
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Filter Jobs</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedPosition || ""}
+                        onValueChange={setSelectedPosition}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Position</SelectLabel>
+                            {positions.map((position) => (
+                              <SelectItem key={position} value={position}>
+                                {position}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Select
                         value={selectedLocation || ""}
@@ -136,6 +196,46 @@ const Index = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedSalaryRange || ""}
+                        onValueChange={setSelectedSalaryRange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select salary range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Salary Range</SelectLabel>
+                            {salaryRanges.map((range) => (
+                              <SelectItem key={range} value={range}>
+                                {range}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedType || ""}
+                        onValueChange={setSelectedType}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select employment type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Employment Type</SelectLabel>
+                            {types.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -143,7 +243,16 @@ const Index = () => {
           </div>
 
           {hasActiveFilters && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              {selectedPosition && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedPosition}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedPosition(null)}
+                  />
+                </Badge>
+              )}
               {selectedLocation && (
                 <Badge variant="secondary" className="gap-2">
                   {selectedLocation}
@@ -159,6 +268,24 @@ const Index = () => {
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => setSelectedCompany(null)}
+                  />
+                </Badge>
+              )}
+              {selectedSalaryRange && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedSalaryRange}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedSalaryRange(null)}
+                  />
+                </Badge>
+              )}
+              {selectedType && (
+                <Badge variant="secondary" className="gap-2">
+                  {selectedType}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedType(null)}
                   />
                 </Badge>
               )}
