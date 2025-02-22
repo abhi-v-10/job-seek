@@ -30,12 +30,12 @@ interface JobCardProps {
 
 export function JobCard({
   id,
-  company,
-  position,
-  location,
-  salary,
-  type,
-  level,
+  company = "Unknown Company", // Added default value
+  position = "Untitled Position", // Added default value
+  location = "No location specified", // Added default value
+  salary = "Salary not specified", // Added default value
+  type = "Not specified", // Added default value
+  level = "Not specified", // Added default value
   postedAt,
   logo,
 }: JobCardProps) {
@@ -59,7 +59,7 @@ export function JobCard({
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle(); // Changed from single() to maybeSingle()
       
       if (error) throw error;
       return data;
@@ -119,7 +119,9 @@ export function JobCard({
               {logo ? (
                 <img src={logo} alt={company} className="w-8 h-8 rounded-full" />
               ) : (
-                <span className="text-lg font-semibold">{company[0]}</span>
+                <span className="text-lg font-semibold">
+                  {company && company.length > 0 ? company[0].toUpperCase() : "?"}
+                </span>
               )}
             </div>
             <div>
@@ -165,7 +167,9 @@ export function JobCard({
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
-                  <span className="text-lg font-semibold">{company[0]}</span>
+                  <span className="text-lg font-semibold">
+                    {company && company.length > 0 ? company[0].toUpperCase() : "?"}
+                  </span>
                 </div>
                 <div>
                   <h4 className="font-semibold">{company}</h4>
@@ -230,3 +234,4 @@ export function JobCard({
     </>
   );
 }
+
