@@ -127,7 +127,7 @@ const SeekBot = () => {
         <div className="flex flex-col items-center justify-center">
           <h1 className="text-3xl font-bold mb-6">Chat with SeekBot</h1>
           <p className="text-muted-foreground mb-8">
-            Ask me anything about job searching, resume writing, or career advice!
+            Click on our Advanced AI chatbot below and ask anything about job searching, resume writing, or even career advices!
           </p>
         </div>
       </main>
