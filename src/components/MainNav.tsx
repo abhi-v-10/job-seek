@@ -1,10 +1,17 @@
 
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Search, MessageSquare, Briefcase, Plus } from "lucide-react";
+import { Search, MessageSquare, Briefcase, Plus, LogIn, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export function MainNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const navItems = [
     {
@@ -23,6 +30,20 @@ export function MainNav() {
       icon: Plus
     }
   ];
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <nav className="bg-[#18181B] text-white px-6 py-4 sticky top-0 z-50">
@@ -53,6 +74,32 @@ export function MainNav() {
           <button className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <Search size={20} />
           </button>
+          {user ? (
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white"
+                onClick={handleSignOut}
+              >
+                Sign out
+              </Button>
+              <Button variant="secondary" size="sm" className="flex items-center">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex items-center"
+              onClick={() => navigate("/auth")}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Sign in
+            </Button>
+          )}
         </div>
       </div>
     </nav>
