@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ type Contact = {
 export default function Messages() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const queryClient = useQueryClient();
@@ -126,6 +129,18 @@ export default function Messages() {
 
   return (
     <div className="container max-w-4xl py-8">
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => navigate("/")}
+          className="h-8 w-8"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-2xl font-bold">Messages</h1>
+      </div>
+
       <div className="flex gap-4 h-[600px]">
         <div className="w-1/3 border rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-4">Contacts</h2>
