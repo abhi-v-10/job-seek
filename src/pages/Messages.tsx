@@ -17,19 +17,23 @@ import {
 import { MessageSquarePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Define interface for profile data
+// Define basic profile interface
 interface Profile {
   id: string;
   username: string | null;
 }
 
-// Define interface for messages with profile relations
-interface MessageWithProfiles {
+// Define message interface
+interface Message {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
+}
+
+// Define the combined interface for messages with profile data
+interface MessageWithProfiles extends Message {
   sender: Profile;
   receiver: Profile;
 }
@@ -62,7 +66,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return (data as MessageWithProfiles[]) || [];
+      return data as MessageWithProfiles[];
     },
     enabled: !!user,
   });
