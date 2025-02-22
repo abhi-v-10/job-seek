@@ -74,6 +74,7 @@ export type Database = {
           created_at: string | null
           id: string
           job_id: string | null
+          read: boolean | null
           receiver_id: string
           sender_id: string
           updated_at: string | null
@@ -83,6 +84,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           job_id?: string | null
+          read?: boolean | null
           receiver_id: string
           sender_id: string
           updated_at?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           job_id?: string | null
+          read?: boolean | null
           receiver_id?: string
           sender_id?: string
           updated_at?: string | null
