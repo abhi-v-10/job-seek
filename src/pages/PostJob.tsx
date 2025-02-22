@@ -52,7 +52,8 @@ const PostJob = () => {
             salary: corporateFormData.salary,
             type: corporateFormData.type,
             level: corporateFormData.experience,
-            job_type: "corporate"
+            job_type: "corporate",
+            posted_by: user.id,
           }
         : {
             work: domesticFormData.work,
@@ -60,13 +61,11 @@ const PostJob = () => {
             location: domesticFormData.location,
             hourly_wage: domesticFormData.hourlyWage,
             salary: domesticFormData.hourlyWage + " per hour",
-            job_type: "domestic"
+            job_type: "domestic",
+            posted_by: user.id,
           };
 
-      const { error } = await supabase.from("jobs").insert({
-        ...jobData,
-        posted_by: user.id,
-      });
+      const { error } = await supabase.from("jobs").insert(jobData);
 
       if (error) throw error;
 
@@ -163,3 +162,4 @@ const PostJob = () => {
 };
 
 export default PostJob;
+
