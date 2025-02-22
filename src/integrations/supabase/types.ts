@@ -143,6 +143,38 @@ export type Database = {
         }
         Relationships: []
       }
+      skills: {
+        Row: {
+          category: Database["public"]["Enums"]["skill_category"] | null
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["skill_category"] | null
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["skill_category"] | null
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -152,6 +184,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      skill_category: "technical" | "soft" | "language" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
