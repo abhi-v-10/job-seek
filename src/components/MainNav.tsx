@@ -53,8 +53,7 @@ export function MainNav() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileUpload = async (file: File) => {
     if (!file) return;
 
     // Check file type
@@ -144,7 +143,12 @@ export function MainNav() {
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = '.pdf,.png';
-                  input.onchange = handleFileUpload;
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      handleFileUpload(file);
+                    }
+                  };
                   input.click();
                 }}>
                   <Upload size={16} />
