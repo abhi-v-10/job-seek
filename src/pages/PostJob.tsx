@@ -95,6 +95,7 @@ const PostJob = () => {
             daily_work_time: parseInt(domesticFormData.dailyWorkTime),
             location: domesticFormData.location,
             hourly_wage: domesticFormData.hourlyWage,
+            salary: domesticFormData.hourlyWage + " per hour", // Add salary field for domestic jobs
             job_type: "domestic"
           };
 
