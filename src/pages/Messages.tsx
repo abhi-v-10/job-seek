@@ -24,15 +24,15 @@ interface Profile {
   username: string | null;
 }
 
-// Define message interface
-interface Message {
+// Define message interface with explicit profile relationships
+interface MessageWithProfiles {
   id: string;
   content: string;
   created_at: string;
   sender_id: string;
   receiver_id: string;
-  sender?: Profile;
-  receiver?: Profile;
+  sender: Profile | null;
+  receiver: Profile | null;
 }
 
 const Messages = () => {
@@ -43,7 +43,7 @@ const Messages = () => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const { data: messages, isLoading } = useQuery({
+  const { data: messages, isLoading } = useQuery<MessageWithProfiles[]>({
     queryKey: ['messages', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -63,7 +63,7 @@ const Messages = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Message[];
+      return data as MessageWithProfiles[];
     },
     enabled: !!user,
   });
