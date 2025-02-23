@@ -5,34 +5,35 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Deep, moody base colors with blue accent */
+    --background: 220 20% 8%;
+    --foreground: 40 25% 98%;
  
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --card-hover: 240 10% 8%;
+    --card: 220 20% 10%;
+    --card-foreground: 40 25% 98%;
+    --card-hover: 220 20% 12%;
  
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 20% 8%;
+    --popover-foreground: 40 25% 98%;
  
-    --primary: 262 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 220 20% 8%;
  
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 40 25% 98%;
  
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 75%;
+    --muted: 220 15% 15%;
+    --muted-foreground: 40 20% 80%;
  
-    --accent: 262 83.3% 57.8%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 210 100% 50%;
+    --accent-foreground: 220 20% 8%;
  
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 40 25% 98%;
  
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 220 15% 15%;
+    --input: 220 15% 15%;
+    --ring: 210 100% 50%;
 
     --radius: 0.75rem;
   }
@@ -40,31 +41,50 @@
 
 @layer base {
   * {
-    @apply border-border selection:bg-white/10 selection:text-white;
+    @apply border-border selection:bg-blue-400/10 selection:text-blue-50;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased bg-noise;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
+  
+  /* Serif headers */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-wide;
+  }
+  
+  /* Sans-serif body text */
+  p, span, div {
+    @apply font-sans tracking-wide leading-relaxed;
+  }
+}
+
+/* Noise texture background */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+  background-position: 0 0;
+  background-size: 200px 200px;
 }
 
 .job-card {
-  @apply relative p-6 rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200 hover:shadow-md hover:bg-card-hover;
-  animation: border-glow 4s ease-in-out infinite;
+  @apply relative p-6 rounded-lg border shadow-lg transition-all duration-300;
+  background-color: hsl(var(--card));
+  animation: glow 4s ease-in-out infinite;
 }
 
-@keyframes border-glow {
-  0% {
-    box-shadow: 0 0 5px #9b87f5, 0 0 10px #9b87f5, 0 0 15px #9b87f5;
+/* Glowing card effect */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 5px theme('colors.blue.500/0.1'),
+      0 0 15px theme('colors.blue.500/0.1'),
+      0 0 25px theme('colors.blue.500/0.05');
   }
-  33% {
-    box-shadow: 0 0 5px #0EA5E9, 0 0 10px #0EA5E9, 0 0 15px #0EA5E9;
-  }
-  66% {
-    box-shadow: 0 0 5px #D946EF, 0 0 10px #D946EF, 0 0 15px #D946EF;
-  }
-  100% {
-    box-shadow: 0 0 5px #9b87f5, 0 0 10px #9b87f5, 0 0 15px #9b87f5;
+  50% {
+    box-shadow: 
+      0 0 10px theme('colors.blue.500/0.15'),
+      0 0 20px theme('colors.blue.500/0.1'),
+      0 0 30px theme('colors.blue.500/0.05');
   }
 }
 
@@ -86,23 +106,51 @@
 /* Colorful text utilities */
 @layer utilities {
   .text-gradient {
-    @apply bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent;
+    @apply bg-gradient-to-br from-blue-100 via-blue-200/90 to-blue-300/70 bg-clip-text text-transparent;
   }
   
-  .text-gradient-purple {
-    @apply bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent;
+  .text-gradient-warm {
+    @apply bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 bg-clip-text text-transparent;
   }
   
-  .text-gradient-blue {
-    @apply bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent;
-  }
-
-  .text-gradient-pink {
-    @apply bg-gradient-to-br from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent;
-  }
-
   .glass-morphism {
     @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
   }
+
+  .glow-sm {
+    @apply relative;
+    &::after {
+      content: "";
+      @apply absolute inset-0 rounded-lg;
+      background: radial-gradient(
+        800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        theme('colors.blue.500/0.06'),
+        transparent 40%
+      );
+    }
+  }
+
+  .glow-lg {
+    @apply relative;
+    &::after {
+      content: "";
+      @apply absolute inset-0 rounded-lg;
+      background: radial-gradient(
+        1200px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        theme('colors.blue.500/0.08'),
+        transparent 40%
+      );
+    }
+  }
 }
 
+/* Hover effects */
+.hover-glow {
+  @apply transition-all duration-300;
+  &:hover {
+    @apply bg-blue-500/5;
+    box-shadow: 
+      0 0 10px theme('colors.blue.500/0.1'),
+      0 0 20px theme('colors.blue.500/0.05');
+  }
+}

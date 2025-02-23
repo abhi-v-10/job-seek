@@ -47,7 +47,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem 
           className="flex items-center gap-2"
-          onSelect={() => navigate("/profile/settings")}
+          onSelect={() => navigate("/profile-settings")}
         >
           <Settings size={16} />
           <span>Profile Settings</span>
