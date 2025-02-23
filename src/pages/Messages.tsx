@@ -1,15 +1,25 @@
-
-import { useEffect, useState, useCallback, startTransition } from "react";
+import { useEffect, useState, useCallback, startTransition, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ContactsList } from "@/components/messages/ContactsList";
-import { ChatWindow } from "@/components/messages/ChatWindow";
-import type { Contact, Message } from "@/types/messages";
+
+type Message = {
+  id: string;
+  content: string;
+  sender_id: string;
+  receiver_id: string;
+  created_at: string;
+};
+
+type Contact = {
+  id: string;
+  full_name: string | null;
+};
 
 export default function Messages() {
   const { user } = useAuth();
@@ -19,51 +29,17 @@ export default function Messages() {
   const [messageInput, setMessageInput] = useState("");
   const queryClient = useQueryClient();
 
-  // Fetch contacts (users we've messaged with)
+  // Fetch contacts (other users)
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
-      if (!user?.id) return [];
-
-      const { data: messages, error } = await supabase
-        .from("messages")
-        .select(`
-          sender_id,
-          receiver_id,
-          job_id,
-          jobs:jobs(position, company, work)
-        `)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .neq("id", user?.id || "");
 
       if (error) throw error;
-
-      // Get unique contacts with their associated job details
-      const uniqueContacts = new Map<string, Contact>();
-      
-      for (const message of messages) {
-        const contactId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
-        
-        if (!uniqueContacts.has(contactId)) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("id, full_name")
-            .eq("id", contactId)
-            .single();
-
-          if (profile) {
-            uniqueContacts.set(contactId, {
-              id: profile.id,
-              full_name: profile.full_name,
-              job_id: message.job_id,
-              job_title: message.jobs?.position || message.jobs?.work,
-              company: message.jobs?.company,
-              work: message.jobs?.work
-            });
-          }
-        }
-      }
-
-      return Array.from(uniqueContacts.values());
+      return data as Contact[];
     },
     enabled: !!user?.id,
   });
@@ -77,10 +53,8 @@ export default function Messages() {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(
-          `and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.id}),` +
-          `and(sender_id.eq.${selectedContact.id},receiver_id.eq.${user.id})`
-        )
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .or(`sender_id.eq.${selectedContact.id},receiver_id.eq.${selectedContact.id}`)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -89,32 +63,9 @@ export default function Messages() {
     enabled: !!selectedContact?.id && !!user?.id,
   });
 
-  // Mark messages as read when viewing them
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      if (!user?.id || !selectedContact?.id) return;
-
-      try {
-        await supabase
-          .from("messages")
-          .update({ read: true })
-          .eq("receiver_id", user.id)
-          .eq("sender_id", selectedContact.id);
-
-        // Invalidate queries to update UI
-        queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
-        queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
-      } catch (error: any) {
-        console.error("Error marking messages as read:", error);
-      }
-    };
-
-    markMessagesAsRead();
-  }, [selectedContact?.id, user?.id, queryClient]);
-
   // Subscribe to new messages
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !selectedContact?.id) return;
 
     const subscription = supabase
       .channel("messages")
@@ -124,17 +75,10 @@ export default function Messages() {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `receiver_id=eq.${user.id}`,
+          filter: `sender_id=eq.${selectedContact.id},receiver_id=eq.${user.id}`,
         },
-        (payload) => {
-          // Update messages if sender is currently selected contact
-          if (selectedContact?.id === payload.new.sender_id) {
-            queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
-          }
-          // Always update unread messages count
-          queryClient.invalidateQueries({ queryKey: ["unreadMessages"] });
-          // Update contacts list as we might have a new contact
-          queryClient.invalidateQueries({ queryKey: ["contacts"] });
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["messages", selectedContact.id] });
         }
       )
       .subscribe();
@@ -142,7 +86,7 @@ export default function Messages() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.id, selectedContact?.id, queryClient]);
+  }, [selectedContact?.id, user?.id, queryClient]);
 
   const handleContactSelect = useCallback((contact: Contact) => {
     startTransition(() => {
@@ -156,11 +100,9 @@ export default function Messages() {
 
     try {
       const { error } = await supabase.from("messages").insert({
-        content: messageInput.trim(),
+        content: messageInput,
         sender_id: user.id,
         receiver_id: selectedContact.id,
-        job_id: selectedContact.job_id,
-        read: false
       });
 
       if (error) throw error;
@@ -193,19 +135,66 @@ export default function Messages() {
       </div>
 
       <div className="flex gap-4 h-[600px]">
-        <ContactsList
-          contacts={contacts}
-          selectedContact={selectedContact}
-          onContactSelect={handleContactSelect}
-        />
-        <ChatWindow
-          contact={selectedContact}
-          messages={messages}
-          currentUserId={user.id}
-          messageInput={messageInput}
-          onMessageInputChange={setMessageInput}
-          onMessageSubmit={handleSendMessage}
-        />
+        <div className="w-1/3 border rounded-lg p-4">
+          <h2 className="text-lg font-semibold mb-4">Contacts</h2>
+          <div className="space-y-2">
+            {contacts.map((contact) => (
+              <Button
+                key={contact.id}
+                variant={selectedContact?.id === contact.id ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => handleContactSelect(contact)}
+              >
+                {contact.full_name || "Unknown"}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 border rounded-lg p-4">
+          {selectedContact ? (
+            <div className="h-full flex flex-col">
+              <h2 className="text-lg font-semibold mb-4">
+                Chat with {selectedContact.full_name || "Unknown"}
+              </h2>
+              <Suspense fallback={<div>Loading messages...</div>}>
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${
+                        message.sender_id === user.id ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`rounded-lg px-4 py-2 max-w-[70%] ${
+                          message.sender_id === user.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Suspense>
+
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Input
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Type your message..."
+                />
+                <Button type="submit">Send</Button>
+              </form>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              Select a contact to start messaging
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
