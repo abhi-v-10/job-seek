@@ -1,22 +1,6 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const HOURLY_WAGE_RANGES = [
-  "₹0 - ₹200",
-  "₹200 - ₹400",
-  "₹400 - ₹600",
-  "₹600 - ₹800",
-  "₹800 - ₹1000",
-  "₹1000+"
-];
 
 interface DomesticJobFormProps {
   formData: {
@@ -99,28 +83,16 @@ export const DomesticJobForm = ({
               htmlFor="hourlyWage"
               className="block text-sm font-medium mb-2"
             >
-              Hourly Wage Range
+              Hourly Wage
             </label>
-            <Select
+            <Input
+              id="hourlyWage"
+              name="hourlyWage"
               value={formData.hourlyWage}
-              onValueChange={(value) => {
-                const event = {
-                  target: { name: 'hourlyWage', value }
-                } as React.ChangeEvent<HTMLInputElement>;
-                onFormChange(event);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select hourly wage range" />
-              </SelectTrigger>
-              <SelectContent>
-                {HOURLY_WAGE_RANGES.map((range) => (
-                  <SelectItem key={range} value={range}>
-                    {range} per hour
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={onFormChange}
+              placeholder="e.g. 500 - 600 per hour"
+              required
+            />
           </div>
         </div>
 

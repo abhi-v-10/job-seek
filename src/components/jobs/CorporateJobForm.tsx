@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,16 +38,6 @@ const CORPORATE_POSITIONS = [
   "Janitor",
   "Security Officer",
   "Intern",
-];
-
-const SALARY_RANGES = [
-  "₹40k - ₹50k",
-  "₹50k - ₹60k",
-  "₹60k - ₹70k",
-  "₹70k - ₹80k",
-  "₹80k - ₹90k",
-  "₹90k - ₹100k",
-  "₹100k+"
 ];
 
 interface CorporateJobFormProps {
@@ -129,21 +120,14 @@ export const CorporateJobForm = ({
             <label htmlFor="salary" className="block text-sm font-medium mb-2">
               Salary Range
             </label>
-            <Select
+            <Input
+              id="salary"
+              name="salary"
               value={formData.salary}
-              onValueChange={(value) => onFormChange("salary", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select salary range" />
-              </SelectTrigger>
-              <SelectContent>
-                {SALARY_RANGES.map((range) => (
-                  <SelectItem key={range} value={range}>
-                    {range}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(e) => onFormChange("salary", e.target.value)}
+              placeholder="e.g. $50k - $70k"
+              required
+            />
           </div>
 
           <div>

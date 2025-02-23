@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,23 +18,12 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        navigate('/');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -47,25 +36,10 @@ const Auth = () => {
 
         if (error) throw error;
 
-        if (data.user?.identities?.length === 0) {
-          toast({
-            title: "Account already exists",
-            description: "Please sign in instead.",
-            variant: "destructive",
-          });
-          setIsSignUp(false);
-        } else {
-          toast({
-            title: "Check your email",
-            description: "We sent you a confirmation link. Please verify your email to continue.",
-          });
-          // Clear form
-          setEmail("");
-          setPassword("");
-          setFullName("");
-          setMobileNumber("");
-          setIsSignUp(false);
-        }
+        toast({
+          title: "Check your email",
+          description: "We sent you a confirmation link.",
+        });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
