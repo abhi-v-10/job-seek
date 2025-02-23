@@ -15,7 +15,6 @@ const PostJob = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobType, setJobType] = useState<"corporate" | "domestic" | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [corporateFormData, setCorporateFormData] = useState({
     company: "",
     position: "",
@@ -31,10 +30,6 @@ const PostJob = () => {
     hourlyWage: "",
   });
 
-  const handleImageUpload = (file: File) => {
-    setSelectedImage(file);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
@@ -49,25 +44,6 @@ const PostJob = () => {
 
     setIsSubmitting(true);
     try {
-      let logoUrl = null;
-      
-      if (selectedImage) {
-        const fileExt = selectedImage.name.split('.').pop();
-        const filePath = `${crypto.randomUUID()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('job-images')
-          .upload(filePath, selectedImage);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('job-images')
-          .getPublicUrl(filePath);
-          
-        logoUrl = publicUrl;
-      }
-
       const jobData = jobType === "corporate"
         ? {
             company: corporateFormData.company,
@@ -76,7 +52,6 @@ const PostJob = () => {
             salary: corporateFormData.salary,
             type: corporateFormData.type,
             level: corporateFormData.experience,
-            logo: logoUrl,
             job_type: "corporate"
           }
         : {
@@ -85,7 +60,6 @@ const PostJob = () => {
             location: domesticFormData.location,
             hourly_wage: domesticFormData.hourlyWage,
             salary: domesticFormData.hourlyWage + " per hour",
-            logo: logoUrl,
             job_type: "domestic"
           };
 
@@ -172,7 +146,6 @@ const PostJob = () => {
               onSubmit={handleSubmit}
               onBack={() => setJobType(null)}
               isSubmitting={isSubmitting}
-              onImageUpload={handleImageUpload}
             />
           ) : (
             <DomesticJobForm
@@ -181,7 +154,6 @@ const PostJob = () => {
               onSubmit={handleSubmit}
               onBack={() => setJobType(null)}
               isSubmitting={isSubmitting}
-              onImageUpload={handleImageUpload}
             />
           )}
         </div>

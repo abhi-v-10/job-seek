@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload } from "lucide-react";
-import { useState } from "react";
 
 const CORPORATE_POSITIONS = [
   "Software Developer",
@@ -40,16 +40,6 @@ const CORPORATE_POSITIONS = [
   "Intern",
 ];
 
-const SALARY_RANGES = [
-  "₹40k - ₹50k",
-  "₹50k - ₹60k",
-  "₹60k - ₹70k",
-  "₹70k - ₹80k",
-  "₹80k - ₹90k",
-  "₹90k - ₹100k",
-  "₹100k+"
-];
-
 interface CorporateJobFormProps {
   formData: {
     company: string;
@@ -63,7 +53,6 @@ interface CorporateJobFormProps {
   onSubmit: (e: React.FormEvent) => void;
   onBack: () => void;
   isSubmitting: boolean;
-  onImageUpload: (file: File) => void;
 }
 
 export const CorporateJobForm = ({
@@ -72,18 +61,7 @@ export const CorporateJobForm = ({
   onSubmit,
   onBack,
   isSubmitting,
-  onImageUpload,
 }: CorporateJobFormProps) => {
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      onImageUpload(file);
-    }
-  };
-
   return (
     <>
       <h1 className="text-3xl font-bold">Corporate Job</h1>
@@ -91,36 +69,6 @@ export const CorporateJobForm = ({
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
         <div className="space-y-4">
-          <div>
-            <label htmlFor="company-logo" className="block text-sm font-medium mb-2">
-              Company Logo
-            </label>
-            <div className="flex items-center gap-4">
-              {selectedImage && (
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-                  <img
-                    src={URL.createObjectURL(selectedImage)}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Upload className="h-4 w-4" />
-                  <span>Upload logo</span>
-                </div>
-                <input
-                  type="file"
-                  id="company-logo"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-              </label>
-            </div>
-          </div>
-
           <div>
             <label htmlFor="company" className="block text-sm font-medium mb-2">
               Company Name
@@ -172,21 +120,14 @@ export const CorporateJobForm = ({
             <label htmlFor="salary" className="block text-sm font-medium mb-2">
               Salary Range
             </label>
-            <Select
+            <Input
+              id="salary"
+              name="salary"
               value={formData.salary}
-              onValueChange={(value) => onFormChange("salary", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select salary range" />
-              </SelectTrigger>
-              <SelectContent>
-                {SALARY_RANGES.map((range) => (
-                  <SelectItem key={range} value={range}>
-                    {range}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(e) => onFormChange("salary", e.target.value)}
+              placeholder="e.g. $50k - $70k"
+              required
+            />
           </div>
 
           <div>
